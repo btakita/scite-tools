@@ -1,0 +1,131 @@
+07.01.07
+  - added scite.GetClipboardText Lua extension function
+
+05.01.07
+  - finished migration from Lua 5.0 to Lua 5.1 (Linux only)
+    (changes are in LuaExtension51.cxx, performing a regular make in
+    gtk/ folder still uses Lua 5.0)
+
+04.01.07
+  - began migrating from Lua 5.0 to Lua 5.1 (Linux only)
+
+03.01.07
+  - removed lexers I don't have any use for from repository
+
+02.01.07
+  - enabled OnStyle Lua extension function
+
+31.12.06
+  - updated keys.lua to properly interpret windows keys
+
+30.12.06
+  - recompiled windows exe with additional Lua extension functions
+    (UpdateStatusBar, SwitchToBuffer, MenuCommand)
+  - added Ruby autocompletion and ri doc lookup via rcodetools
+
+21.12.06
+  - added macro recording and playback functionality (for Linux via
+    CDialog)
+  - added choose_key, choose_value, choose functions to CDialog
+
+20.12.06
+  - updated directory structure
+
+19.12.06
+  - added Editing.transpose_char function
+  - file_browser.lua now quotes files/directories with spaces in
+    name
+
+18.12.06
+  - updated source to version in CVS
+
+13.12.06
+  - fixed key_command.lua startup error if in linux and
+    ALTERNATIVE_KEYS is false
+
+01.12.06
+  - updated source to the version in CVS
+
+28.11.06
+  - added scite.SwitchToBuffer Lua extension function that
+    switches to a buffer (specified by index)
+  - added option to completion.rb to display the list of available
+    choices in a treeview
+  - renamed command.lua to cdialog.lua, changed Command table
+    to CDialog table, added switch_buffer for quick buffer
+    switching
+
+27.11.06
+  - added scite.Buffers lua extension that lists the names of
+    currently open buffers delimited by ';'s
+
+25.11.06
+  - added scite.UpdateStatusBar lua extension function
+  - added chaining support to keys.lua
+  - moved key command definitions out of keys.lua and into new
+    key_commands.lua
+
+24.11.06
+  - added command.rb and command.lua for Linux only that displays
+    a completion dialog with commands for SciTE (requires
+    Ruby/GTK2)
+  - modified Editing.squeeze to 'squeeze' character to the left
+    of the cursor instead of the character under the cursor
+  - modified Editing.select_inclosed where if no string param is
+    passed, the function uses char_matches to select inside
+    inclosures nearest to the left of the cursor from inside out
+  - changed mline marker color
+
+23.11.06
+  - modified ruby.properties to include '$' as a word character
+
+22.09.06
+  - fixed bug in functions.lua where selecting an empty function
+    list item caused a lua error
+  - fixed bug in ruby.lua to call Functions.get_line instead of
+    non-existent get_function_line
+
+20.09.2006
+  - changed functions.lua to check that the "function" is in the
+    correct lexer style (so keywords in comments don't trigger)
+
+18.09.2006
+  - added convert function to editing.lua for converting between
+    tabs and spaces and keybindings to go along with it
+
+16.09.2006
+  - added squeeze function to editing.lua + keybindings
+  - added move_line function to editing.lua + keybindings
+
+15.09.2006
+  - speed improvements for snippets.lua
+
+14.09.2006
+  - added ctrl+return macro that moves caret to EOL and returns
+  - removed redundant function calls
+  - fixed ruby.lua to use literal newlines for OnKey
+
+11.09.2006
+  - added perl.properties for bash and perl highlighting
+  - modified above change to let bash have its own properties file
+  - added ability to generate perl snippets in gen_snippets.rb
+
+10.09.2006
+  - fixed FilterThrough.filter were file containing selected text
+    was passed directly to the command instead of passed as input
+    to the command.
+  - added FilterThrough.filter as key command to keys.lua
+  - changed key shortcut for reformat paragraph to ctrl+alt+q
+  - fixed the fact php.lua overwrote HTML key commands table
+  - fixed reformat paragraph to preserve indentation
+
+06.09.2006
+  - keys.lua now accepts some key values higher than 255 with
+    KEYSYMS (check keys_doc.txt for more details) Linux key values
+    added, Windows TODO.
+  - lua.lua and ruby.lua no longer try to autocomplete a control
+    structure with 'end' on a return keypress. Instead,
+    shift+return does this.
+  - removed lua.lua OnChar function because it is unnecessary now
+    (used to override editing.lua's OnChar)
+  - fixed some undo issues having to do with key commands.

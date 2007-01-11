@@ -1,0 +1,145 @@
+
+  SciTE Snippets by Mitchell
+    email: mitchell {att} caladbolg {dott} net
+
+  Copyright (c) 2006 Mitchell Foral. All rights reserved.
+  Permission to use, copy, modify, and distribute this
+  utility is grated, provided credit is given to Mitchell.
+
+  Basically, snippets are pieces of text inserted into a
+  document, but can execute shell code at run-time, contain
+  placeholders for additional information to be added, and
+  make simple transforms on that information. This is much
+  more powerful than SciTE's abbreviation expansion system.
+
+  There is no other editor that comes close to matching
+  Textmate (sadly, MacOSX only) but SciTE. Of course, SciTE
+  in its default state doesn't, but with Lua, it can. This
+  snippet system is designed to come close to mimicking
+  Textmate, although it will never be a perfect clone.
+
+  Syntax:
+    Snippets are defined in a user-defined table 'snippets'.
+    Scopes (discussed below) are numeric indices of the
+    snippets table and are tables themselves. Each string
+    index in each scope table is the snippet trigger text.
+    The expanded text is equated to this trigger.
+
+    For example:
+    snippets = {
+      [SCE_RB_DEFAULT] = {
+        ['def'] = "def ${1:initialize}(${2:})\n  ${0}\nend"
+      },
+      [SCE_RB_STRING] = {
+        ['c'] = "#{${0}}"
+      }
+    }
+
+    Scopes:
+      SCE_RB_DEFAULT is a constant and has the value defined
+      in Scintilla.iface (0). This means that 'def' will be
+      expanded ONLY in the whitespace scope. Likewise, the
+      'c' trigger can only be expanded inside a string.
+
+      Scope-insensitive snippets' scopes should be 'none'.
+      (e.g. snippets['none']['init'] = "initialize${0}"
+        or  snippets.none.init = "initialize")
+      Note however that triggers in the current scope always
+      take precedence over scope-insensitive triggers.
+
+    By default, scopes are enabled. To disable them, set the
+    SCOPES_ENABLED variable below to false. Now triggers can be
+    defined as indices of the 'snippets' table.
+    (e.g. snippets['init'] = "initialize${0}")
+
+    Placeholders/tab stops: ${num:text} (e.g. ${1:text})
+      These are visited in numeric order with ${0} being the
+      final cursor position. If the final cursor position is not
+      specified, the cursor is placed at the end of the snippet.
+
+    Mirrors: ${num} (e.g. ${1})
+      ${1} would be mirrored by whatever value ${1:text}
+      is in the above example. Note that mirrors are not
+      updated as text is typed, only after the next item is
+      moved to.
+
+    Transformations: ${num/pattern/replacement/options}
+      (e.g. ${1/text/other $0/})
+      Transformations are like mirrors, only they transform
+      the text to mirror. In this case, 'text' would be
+      replaced with 'other text' if the value of ${1:text}
+      in the example above matched the pattern.
+      The regular expressions are Ruby's regexps.
+      Captures groups are referenced with the prefix '$' and
+      $0 is the entire match.
+      Ruby code can be executed inside the replacement text
+      using #{}. (e.g. ${1/text/#{$0.capitalize}/})
+
+    SciTE variables: $(variable) (e.g. $(FileNameExt))
+      SelectedText is a special variable having the value of
+      the currently selected text.
+
+    Interpolated shell code: `shell_code` (e.g. `date`)
+
+    The '$', '/', '}', and '`' characters can be escaped with
+    the '\' character. Keep in mind that this follows Lua
+    syntax, so in literal strings (" " or ' '), '\\' is
+    equivalent to one '\' character, but in strings like
+    [[ ]], a single '\' is used.
+
+  To expand a trigger word, call 'Snippets.insert'.
+
+  Be sure to set the PLATFORM, RUBY_CMD, FILE_IN and FILE_OUT
+  variables as appropriate. Regexps use Ruby, so Ruby must be
+  installed. That, or you can modify the code to use another
+  language's regexps. (Get Ruby at http://ruby-lang.org)
+
+  You can declare snippets in separate lua files and use
+  them. For example, I have a ruby.lua file with snippets
+  specific to Ruby that is loaded whenever I open or switch
+  to a Ruby file, but are otherwise invisible to non-Ruby
+  files.
+
+  Unlike Textmate, you CAN have nested snippets.
+
+  Limitations:
+    Shell code inside regexps is executed the moment a
+      snippet is inserted, not as placeholders are filled
+    Calling undo or performing other text operations outside
+      the snippet WILL probably cause unexpected behavior.
+    I don't recommend using the TAB key as the trigger word
+      expander. I've tried with mixed success to keep the
+      key's original functionality along with snippet
+      expansion. I happen to use Ctrl+I instead.
+    Apparently you cannot call Snippets.* from a command
+      defined in a SciTE properties file without prepending
+      'dostring ' first. So something like
+        command.0.*=dostring Snippets.insert()
+      will function as expected.
+
+  Bugs:
+    If you come across a bug, please turn the DEBUG variable
+    on and send me both the snippet text and output text.
+
+  Testing:
+    To run the test suite, change the RUN_TESTS flag and
+    reload snippets.lua. Remember to reset the flag when you
+    are finished!
+
+  Questions? Comments? Suggestions? Additions?
+    mitchell {att} caladbolg {dott} net
+
+  Changelog:
+    2006.07.20
+      - Added insert_temporary function (linux only)
+    2006.07.12
+      - Added SelectedText variable
+    2006.07.09
+      - Modularized snippets
+    2006.07.03
+      - New show_scope function
+    2006.06.27
+      - Removed ${} upon snippet item focus
+    2006.06.16
+      - Can execute Ruby code in transformations
+      - Added test suite
