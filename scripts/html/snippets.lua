@@ -22,6 +22,7 @@ snippets = {
     sc  = '<span class="${1:class}">${0}</span>',
     ss  = '<span style="${1:style}">${0}</span>',
     a   = '<a href="${1:url}">${0}</a>',
+    an  = '<a name="${1:anchor}">${0}</a>',
     img = '<img src="${1:url}" alt="${2:alt_text}"${3: width="${4:}" height="${5:}"} />',
     nb  = '&nbsp;',
     f   = '<form action="${1:url}" method="${2:post}" name="${3:}"${4:id="${5:${2}}"}>\n  ${0}\n</form>',

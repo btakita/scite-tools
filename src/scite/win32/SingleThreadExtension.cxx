@@ -104,9 +104,11 @@ bool SingleThreadExtension::OnChar(char c) {
 	return ext->OnChar(c);
 }
 
+// added by Mitchell
 bool SingleThreadExtension::OnKey(int keyval, int modifiers) {
 	return ext->OnKey(keyval, modifiers);
 }
+// end added by Mitchell
 
 bool SingleThreadExtension::OnExecute(const char *cmd) {
 	return (SendMessage(hwndDispatcher, STE_WM_ONEXECUTE, reinterpret_cast<WPARAM>(ext), reinterpret_cast<LPARAM>(cmd)) != 0);

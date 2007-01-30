@@ -28,6 +28,8 @@
 #endif
 #include "ContractionState.h"
 #include "SVector.h"
+#include "SplitVector.h"
+#include "Partitioning.h"
 #include "CellBuffer.h"
 #include "CallTip.h"
 #include "KeyMap.h"
@@ -1989,10 +1991,8 @@ gboolean ScintillaGTK::KeyThis(GdkEventKey *event) {
 	// This will have to change for Unicode
 	else if (key >= 0xFE00)
 		key = KeyTranslate(key);
-	else if (IsUnicodeMode())
-		;	// No operation
 #if GTK_MAJOR_VERSION < 2
-	else if ((key >= 0x100) && (key < 0x1000))
+	else if (!IsUnicodeMode() && (key >= 0x100) && (key < 0x1000))
 		key &= 0xff;
 #endif
 
@@ -2003,7 +2003,7 @@ gboolean ScintillaGTK::KeyThis(GdkEventKey *event) {
 	//fprintf(stderr, "SK-key: %d %x %x\n",event->keyval, event->state, consumed);
 	if (event->keyval == 0xffffff && event->length > 0) {
 		ClearSelection();
-		if (pdoc->InsertString(CurrentPosition(), event->string)) {
+		if (pdoc->InsertCString(CurrentPosition(), event->string)) {
 			MovePositionTo(CurrentPosition() + event->length);
 		}
 	}

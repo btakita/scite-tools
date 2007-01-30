@@ -1,3 +1,6 @@
+07.01.18
+  - upgraded to SciTE 1.72
+
 07.01.07
   - added scite.GetClipboardText Lua extension function
 
