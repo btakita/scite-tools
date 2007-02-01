@@ -168,6 +168,14 @@ next_snippet_item = function()
   if not snippet.index then return end
   local tpl_start, tpl_end, tpl_text = snippet_text()
 
+  -- if something went wrong and the snippet has been
+  -- 'messed up' (e.g. by undo/redo commands)
+  if not tpl_text then
+    --_DEBUG('no end marker...cancelling')
+    Snippets.cancel_current()
+    return
+  end
+
   -- first mirror and/or transform
   editor:BeginUndoAction()
   if snippet.index > 0 then
@@ -278,7 +286,10 @@ next_snippet_item = function()
     _DEBUG('tpl_text escapes removed:\n'..tpl_text)
     editor:ReplaceSel(tpl_text)
     local _, tpl_end, _ = snippet_text()
-    editor:SetSel(tpl_end, tpl_end) join_lines()
+    if tpl_end then
+      editor:SetSel(tpl_end, tpl_end)
+      join_lines()
+    end
 
     local s, e = editor:findtext('$CURSOR', 4, tpl_start)
     if s and e then
@@ -302,8 +313,10 @@ end
 function Snippets.cancel_current()
   if not snippet.index then return end
   local tpl_start, tpl_end, _ = snippet_text()
-  editor:SetSel(tpl_start, tpl_end)
-  editor:ReplaceSel() join_lines()
+  if tpl_start and tpl_end then
+    editor:SetSel(tpl_start, tpl_end)
+    editor:ReplaceSel() join_lines()
+  end
   if snippet.seltext then
     editor:AddText(snippet.seltext)
     editor.Anchor = editor.Anchor - string.len(snippet.seltext)
@@ -322,6 +335,7 @@ snippet_text = function()
   local s = snippet.start_pos
   local e = editor:PositionFromLine(
     editor:MarkerLineFromHandle(snippet.end_marker) ) - 1
+  if e < s then return nil, nil, nil end -- error
   return s, e, editor:textrange(s, e)
 end
 
