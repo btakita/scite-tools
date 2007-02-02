@@ -287,6 +287,8 @@ next_snippet_item = function()
     editor:ReplaceSel(tpl_text)
     local _, tpl_end, _ = snippet_text()
     if tpl_end then
+      -- compensate for extra char in CR+LF line endings
+      if editor.EOLMode == 0 then tpl_end = tpl_end - 1 end
       editor:SetSel(tpl_end, tpl_end)
       join_lines()
     end
