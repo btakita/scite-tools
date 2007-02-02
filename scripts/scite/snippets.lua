@@ -431,7 +431,11 @@ load_scopes = function()
       elseif string.find(line, regex2) then -- lex scopes
         local _, _, name, prefix = string.find(line, regex2)
         if lexers[ lexer_constants[name] ] then
-          lexers.current = lexer_constants[name]
+          -- for lexers with multiple languages, keep the same
+          -- parent (eg SCLEX_HTML contains HTML, XML, PHP, etc.)
+          if not ( regex3 and string.find(regex3, prefix) ) then
+            lexers.current = lexer_constants[name]
+          end
         end
         regex3 = '^val%s('..prefix..'[%w_]+)=(%d+)%s*$'
       elseif regex3 and string.find(line, regex3) then -- scope
