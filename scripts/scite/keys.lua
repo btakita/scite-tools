@@ -171,6 +171,8 @@ function OnKey(code, shift, control, alt)
       key_seq = key_seq..KEYSYMS[code]
     elseif code > 47 then -- printable chars start at 48 (0)
       key_seq = key_seq..string.lower( string.char(code) )
+    else
+      return
     end
   end
 
