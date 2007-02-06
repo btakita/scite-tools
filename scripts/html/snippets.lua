@@ -1,6 +1,6 @@
 --[[
   Mitchell's html/snippets.lua
-  Copyright (c) 2006 Mitchell Foral. All rights reserved.
+  Copyright (c) 2006-2007 Mitchell Foral. All rights reserved.
   Permission to use, copy, modify, and distribute this file
   is granted, provided credit is given to Mitchell.
 
@@ -11,6 +11,8 @@ if not snippets then snippets = {} end
 
 snippets = {
   none = {
+tr = '<tr><td>${1:content}</td>${2:}</tr>',
+td = '<td>${1:}</td>',
     t   = '<${1:p}>${0}</${1/^\\s*(\\S+)\\s*/$1/}>',
     d   = '<div>${0}</div>',
     dc  = '<div class="${1:class}">${0}</div>',

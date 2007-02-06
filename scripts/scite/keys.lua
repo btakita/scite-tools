@@ -1,6 +1,6 @@
 --[[
   Mitchell's keys.lua
-  Copyright (c) 2006 Mitchell Foral. All rights reserved.
+  Copyright (c) 2006-2007 Mitchell Foral. All rights reserved.
   Permission to use, copy, modify, and distribute this file
   is granted, provided credit is given to Mitchell.
   Documentation can be found in scripts/doc/keys_doc.txt

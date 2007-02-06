@@ -2,7 +2,7 @@
   SciTE Snippets by Mitchell
     email: mitchell {att} caladbolg {dott} net
 
-  Copyright (c) 2006 Mitchell Foral. All rights reserved.
+  Copyright (c) 2006-2007 Mitchell Foral. All rights reserved.
   Permission to use, copy, modify, and distribute this
   utility is grated, provided credit is given to Mitchell.
 
