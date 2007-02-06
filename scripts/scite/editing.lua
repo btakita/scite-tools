@@ -90,7 +90,6 @@ function Editing.smart_cutcopy(action)
   kill_ring.pos = 1
   if action ~= 'copy' then editor:Cut() return end
   editor:Copy()
-  insert_into_kill_ring(txt)
 end
 
 -- retrieves top item off kill-ring, or scrolls through it
