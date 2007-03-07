@@ -1,6 +1,10 @@
 --[[
   Mitchell's snippets.lua
   Copyright (c) 2006-2007 Mitchell Foral. All rights reserved.
+
+  SciTE-tools homepage: http://caladbolg.net/scite.php
+  Send email to: mitchell<att>caladbolg<dott>net
+
   Permission to use, copy, modify, and distribute this file
   is granted, provided credit is given to Mitchell.
   Documentation can be found in scripts/scite/snippets_doc.txt
@@ -417,8 +421,9 @@ end
 
 -- loads scopes from scintilla.iface
 load_scopes = function()
-  local f = io.open( props['SciteDefaultHome']..
-    '/scripts/utils/lex_scopes.txt' )
+  local path = props['SciteDefaultHome']..
+    '/scripts/utils/lex_scopes.txt'
+  local f = io.open(path)
   if f then
     lexers = { current = nil }
     local lexer_constants = {}
@@ -446,6 +451,9 @@ load_scopes = function()
       end
     end
     f:close()
+  else
+    print('Warning: "'..path..'" does not exist.'..
+      'Snippets.show_scope will not function properly.')
   end
 end
 

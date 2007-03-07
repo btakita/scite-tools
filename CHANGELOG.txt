@@ -1,4 +1,7 @@
-07.01.18
+07.03.07
+  - added website URL and contact info to headers
+
+18.01.07
   - upgraded to SciTE 1.72
 
 07.01.07

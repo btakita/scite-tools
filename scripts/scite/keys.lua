@@ -1,6 +1,10 @@
 --[[
   Mitchell's keys.lua
   Copyright (c) 2006-2007 Mitchell Foral. All rights reserved.
+
+  SciTE-tools homepage: http://caladbolg.net/scite.php
+  Send email to: mitchell<att>caladbolg<dott>net
+
   Permission to use, copy, modify, and distribute this file
   is granted, provided credit is given to Mitchell.
   Documentation can be found in scripts/doc/keys_doc.txt
@@ -250,7 +254,7 @@ end
 -- helper function to get commands via keychain
 try_get_cmd = function(active_table)
   local str_seq = ''
-  for _,key_seq in ipairs(keychain) do
+  for _, key_seq in ipairs(keychain) do
     str_seq = str_seq..key_seq..' '
     active_table = active_table[key_seq]
   end
