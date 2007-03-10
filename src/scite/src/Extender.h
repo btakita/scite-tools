@@ -32,7 +32,7 @@ public:
 	virtual void DoMenuCommand(int cmdID)=0;
 	virtual void UpdateStatusBar(bool bUpdateSlowData)=0;
 	virtual void SwitchToBuffer(int index)=0;
-	virtual char *GetBufferList()=0;
+	virtual char *BufferPath(int index)=0;
 	// the following are platform specific:
 	virtual char *InputDialog(const char *title, const char *label, const char *defaultText)=0;
 	virtual char *GetClipboardContents()=0;

@@ -319,8 +319,8 @@ static int cf_scite_update_status_bar(lua_State *L) {
 	return 0;
 }
 
-static int cf_scite_get_buffer_list(lua_State *L) {
-	lua_pushstring(L, host->GetBufferList());
+static int cf_scite_get_buffer_path(lua_State *L) {
+	lua_pushstring(L, host->BufferPath(luaL_checkint(L, 1)));
 	return 1;
 }
 
@@ -1515,8 +1515,8 @@ static bool InitGlobalScope(bool checkProperties, bool forceReload = false) {
 	lua_pushcfunction(luaState, cf_scite_update_status_bar);
 	lua_rawset(luaState, -3);
 
-	lua_pushliteral(luaState, "Buffers");
-	lua_pushcfunction(luaState, cf_scite_get_buffer_list);
+	lua_pushliteral(luaState, "BufferPath");
+	lua_pushcfunction(luaState, cf_scite_get_buffer_path);
 	lua_rawset(luaState, -3);
 
 	lua_pushliteral(luaState, "SwitchToBuffer");

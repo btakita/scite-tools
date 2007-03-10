@@ -26,7 +26,7 @@ Source Code:
       AutoCSeparator is '|', not '?'
       Calltip colors match dark color scheme
       Added OnKey, scite.MenuCommand, scite.UpdateStatusBar,
-        scite.Buffers, scite.SwitchToBuffer, and
+        scite.BufferPath, scite.SwitchToBuffer, and
         scite.GetClipboardText Lua Extension functions
       Max of 100 commands on the Tools menu (instead of 50)
       Literal newlines ('\n') can be used in api files
@@ -92,16 +92,15 @@ Additional Lua Extension Functions:
     Updates SciTE's statusbar text. Set bUpdateSlowData to true
     if you want to update "slow" data like file permissions,
     current time, etc.
-  scite.Buffers()
-    Returns a list of the filenames of currently open buffers
-    delimited by ';'s.
+  scite.BufferPath([int] index)
+    Returns the name of the buffer specified by index
   scite.SwitchToBuffer([int] index)
-    Switches to buffer specified by index
+    Switches to the buffer specified by index
   scite.GetClipboardText()
     Returns the contents of the clipboard
 
-  Note that scite.Buffers returns an ordered list of open buffers
-  so you know which buffer is which when calling SwitchToBuffer.
+  Note: an example of how to use BufferPath and SwitchToBuffer is
+    located in scripts/scite/CDialog.lua
 
 Compiling SciTE with Lua 5.1
   Lua 5.1 support is still in testing phase. I have experienced

@@ -40,7 +40,7 @@ CDialog = {}
 function CDialog.choose(option_list, title, ...)
   local show_list_opt = arg[1] == true and '-l ' or ''
   os.execute(RUBY_CMD..props['SciteDefaultHome']..
-    '/scripts/utils/completion.rb -n '..title..' '..
+    '/scripts/utils/completion.rb -n "'..title..'" '..
     show_list_opt..' <<< "'..option_list..'"'..
     REDIRECT..FILE_OUT)
   local out
@@ -75,11 +75,15 @@ end
 -- switches to requested buffer
 function CDialog.switch_buffer()
   buffers = {}
-  buffer_list = scite.Buffers()
-  buffer_list = string.gsub(buffer_list, ';', '\n')
-  for buffer_name in string.gfind(buffer_list, '[^\n]+') do
-    table.insert(buffers, buffer_name)
+  for i = 0, tonumber( props['buffers'] ) do
+    local path = scite.BufferPath(i)
+    if path ~= '' then
+      table.insert(buffers, path)
+    else
+      break
+    end
   end
+  buffer_list = table.concat(buffers, '\n')
 
   local buf = CDialog.choose(buffer_list, 'Switch Buffer', true)
   if buf == nil then return end -- cancelled dialog

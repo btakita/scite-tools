@@ -5054,20 +5054,18 @@ void SciTEBase::DoMenuCommand(int cmdID) {
 	MenuCommand(cmdID, 0);
 }
 
-char *SciTEBase::GetBufferList() {
-	SString bufferList = "";
-	//char listSeparator = SendEditor(SCI_AUTOCGETSEPARATOR);
-	char listSeparator = ';';
-	for (int i = 0; i < buffers.length; ++i) {
-		if (buffers.buffers[i].IsUntitled())
-			bufferList += "Untitled";
+char *SciTEBase::BufferPath(int index) {
+	SString path;
+	if (index < buffers.length)
+		if (buffers.buffers[index].IsUntitled())
+			path = "Untitled";
 		else
-			bufferList += buffers.buffers[i].Name().AsFileSystem();
-		bufferList += listSeparator;
-	}
-	char *retval = new char[bufferList.length() + 1];
+			path = buffers.buffers[index].Name().AsFileSystem();
+	else
+		path = "";
+	char *retval = new char[path.length() + 1];
 	if (retval)
-		strcpy(retval, bufferList.c_str());
+		strcpy(retval, path.c_str());
 	return retval;
 }
 

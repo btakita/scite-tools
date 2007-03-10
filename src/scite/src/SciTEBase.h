@@ -905,7 +905,7 @@ protected:
 
 	// added by Mitchell
 	void DoMenuCommand(int cmdID);
-	char *GetBufferList();
+	char *BufferPath(int index);
 	void SwitchToBuffer(int index);
 	// the following are platform specific:
 	virtual char *InputDialog(const char *title, const char *label, const char *defaultText) = 0;

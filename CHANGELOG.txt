@@ -1,3 +1,6 @@
+10.03.07
+  - changed scite.Buffers() to scite.BufferPath(int index) in Lua extension
+
 07.03.07
   - added website URL and contact info to headers
 
