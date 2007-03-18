@@ -1602,13 +1602,13 @@ bool LuaExtension::Finalise() {
 
 bool LuaExtension::Clear() {
 	if (luaState) {
+		CallNamedFunction("OnClear");
+	}
+	if (luaState) {
 		InitGlobalScope(true);
 		extensionScript.clear();
 	} else if ((GetPropertyInt("ext.lua.reset") >= 1) && CheckStartupScript()) {
 		InitGlobalScope(false);
-	}
-	if (luaState) {
-		CallNamedFunction("OnClear");
 	}
 	return false;
 }
