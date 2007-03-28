@@ -8,7 +8,7 @@
   Send email to: mitchell<att>caladbolg<dott>net
 
   Permission to use, copy, modify, and distribute this
-  utility is grated, provided credit is given to Mitchell
+  utility is granted, provided credit is given to Mitchell
 
   SciTE's key commands are quite customizable as it is, but
   not quite as dynamic as they could be.
