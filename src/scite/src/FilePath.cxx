@@ -88,8 +88,7 @@ const char fileRead[] = "rb";
 const char fileWrite[] = "wb";
 #endif
 
-FilePath::FilePath(const char *fileName_) : fileName(fileName_) {
-}
+FilePath::FilePath(const char *fileName_) : fileName(fileName_) {}
 
 FilePath::FilePath(FilePath const &directory, FilePath const &name) {
 	Set(directory, name);
@@ -112,14 +111,14 @@ void FilePath::Set(FilePath const &directory, FilePath const &name) {
 		fileName = name.fileName;
 	} else {
 		fileName = directory.fileName;
-		fileName.appendwithseparator(name.fileName.c_str(), pathSepChar);
+		fileName.appendwithseparator(name.fileName.c_str(),
+			fileName.endswith(pathSepString) ? '\0' : pathSepChar);
 	}
 }
 
 void FilePath::SetDirectory(FilePath directory) {
-	SString curName(fileName);
-	fileName = directory.fileName;
-	fileName.appendwithseparator(curName.c_str(), pathSepChar);
+	FilePath curName(*this);
+	Set(directory, curName);
 }
 
 void FilePath::Init() {
@@ -387,8 +386,7 @@ void FilePath::SetWorkingDirectory() const {
 	chdir(AsFileSystem());
 }
 
-void FilePath::FixCase() {
-}
+void FilePath::FixCase() {}
 
 void FilePath::List(FilePathSet &directories, FilePathSet &files) {
 #ifdef WIN32
@@ -437,7 +435,11 @@ void FilePath::List(FilePathSet &directories, FilePathSet &files) {
 }
 
 FILE *FilePath::Open(const char *mode) const {
-	return fopen(fileName.c_str(), mode);
+	if (IsSet()) {
+		return fopen(fileName.c_str(), mode);
+	} else {
+		return NULL;
+	}
 }
 
 void FilePath::Remove() const {
@@ -508,7 +510,7 @@ bool FilePath::Matches(const char *pattern) const {
 	while (start < pat.length()) {
 		const char *patElement = pat.c_str() + start;
 		if (patElement[0] == '*') {
-			if (nameCopy.endswith(patElement+1)) {
+			if (nameCopy.endswith(patElement + 1)) {
 				return true;
 			}
 		} else {
@@ -660,7 +662,7 @@ FilePathSet::FilePathSet(const FilePathSet &other) {
 	size = other.size;
 	lengthBody = other.lengthBody;
 	body = new FilePath[size];
-	for (size_t i=0; i<lengthBody; i++) {
+	for (size_t i = 0; i < lengthBody; i++) {
 		body[i] = other.body[i];
 	}
 }
@@ -680,7 +682,7 @@ void FilePathSet::Append(FilePath fp) {
 	if (lengthBody >= size) {
 		size *= 2;
 		FilePath *bodyNew = new FilePath[size];
-		for (size_t i=0; i<lengthBody; i++) {
+		for (size_t i = 0; i < lengthBody; i++) {
 			bodyNew[i] = body[i];
 		}
 		delete []body;
@@ -692,3 +694,4 @@ void FilePathSet::Append(FilePath fp) {
 size_t FilePathSet::Length() const {
 	return lengthBody;
 }
+

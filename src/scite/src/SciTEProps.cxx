@@ -187,7 +187,7 @@ void SciTEBase::SetImportMenu() {
 		for (int stackPos = 0; stackPos < importMax; stackPos++) {
 			int itemID = importCmdID + stackPos;
 			if (importFiles[stackPos].IsSet()) {
-				SString entry = LocaliseString("Open");
+				SString entry = localiser.Text("Open");
 				entry += " ";
 				entry += importFiles[stackPos].Name().AsInternal();
 				SetMenuItem(menuOptions, IMPORT_START + stackPos, itemID, entry.c_str());
@@ -211,7 +211,7 @@ void SciTEBase::SetLanguageMenu() {
 	}
 	for (int item = 0; item < languageItems; item++) {
 		int itemID = languageCmdID + item;
-		SString entry = LocaliseString(languageMenu[item].menuItem.c_str());
+		SString entry = localiser.Text(languageMenu[item].menuItem.c_str());
 		if (languageMenu[item].menuKey.length()) {
 #if PLAT_GTK
 			entry += " ";
@@ -226,8 +226,12 @@ void SciTEBase::SetLanguageMenu() {
 	}
 }
 
-const char propFileName[] = "SciTE.properties";
+const char propLocalFileName[] = "SciTE.properties";
+const char propDirectoryFileName[] = "SciTEDirectory.properties";
 
+/**
+Read global and user properties files.
+*/
 void SciTEBase::ReadGlobalPropFile() {
 #ifdef unix
 	extern char **environ;
@@ -258,8 +262,8 @@ void SciTEBase::ReadGlobalPropFile() {
 	FilePath propfileUser = GetUserPropertiesFileName();
 	propsUser.Read(propfileUser, propfileUser.Directory(), importFiles, importMax);
 
-	if (!localisationRead) {
-		ReadLocalisation();
+	if (!localiser.read) {
+		ReadLocalization();
 	}
 }
 
@@ -268,13 +272,35 @@ void SciTEBase::ReadAbbrevPropFile() {
 	propsAbbrev.Read(pathAbbreviations, pathAbbreviations.Directory(), importFiles, importMax);
 }
 
+/**
+Reads the directory properties file depending on the variable
+"properties.directory.enable". Also sets the variable $(SciteDirectoryHome) to the path
+where this property file is found. If it is not found $(SciteDirectoryHome) will
+be set to $(FilePath).
+*/
+void SciTEBase::ReadDirectoryPropFile() {
+	propsDirectory.Clear();
+
+	if (props.GetInt("properties.directory.enable") != 0) {
+		FilePath propfile = GetDirectoryPropertiesFileName();
+		props.Set("SciteDirectoryHome", propfile.Directory().AsFileSystem());
+
+		propsDirectory.Read(propfile, propfile.Directory());
+	}
+}
+
+/**
+Read local and directory properties file.
+*/
 void SciTEBase::ReadLocalPropFile() {
-	FilePath propdir = filePath.Directory();
-	FilePath propfile;
-	propfile.Set(propdir, propFileName);
+	// The directory properties acts like a base local properties file.
+	// Therefore it must be read always before reading the local prop file.
+	ReadDirectoryPropFile();
+
+	FilePath propfile = GetLocalPropertiesFileName();
 
 	propsLocal.Clear();
-	propsLocal.Read(propfile, propdir);
+	propsLocal.Read(propfile, propfile.Directory());
 	//Platform::DebugPrintf("Reading local properties from %s\n", propfile);
 
 	// TODO: Grab these from Platform and update when environment says to
@@ -1307,13 +1333,13 @@ void SciTEBase::SetPropertiesInitial() {
 	wrapFind = props.GetInt("find.replace.wrap", 1);
 }
 
-SString SciTEBase::LocaliseString(const char *s, bool retainIfNotFound) {
+SString Localization::Text(const char *s, bool retainIfNotFound) {
 	SString translation = s;
 	int ellipseIndicator = translation.remove("...");
 	int accessKeyPresent = translation.remove(menuAccessIndicator);
 	translation.lowercase();
 	translation.substitute("\n", "\\n");
-	translation = propsUI.Get(translation.c_str());
+	translation = Get(translation.c_str());
 	if (translation.length()) {
 		if (ellipseIndicator)
 			translation += "...";
@@ -1335,7 +1361,7 @@ SString SciTEBase::LocaliseString(const char *s, bool retainIfNotFound) {
 		translation.substitute("&", menuAccessIndicator);
 		translation.substitute("\\n", "\n");
 	} else {
-		translation = props.Get("translation.missing");
+		translation = missing;
 	}
 	if ((translation.length() > 0) || !retainIfNotFound) {
 		return translation;
@@ -1344,7 +1370,7 @@ SString SciTEBase::LocaliseString(const char *s, bool retainIfNotFound) {
 }
 
 SString SciTEBase::LocaliseMessage(const char *s, const char *param0, const char *param1, const char *param2) {
-	SString translation = LocaliseString(s);
+	SString translation = localiser.Text(s);
 	if (param0)
 		translation.substitute("^0", param0);
 	if (param1)
@@ -1354,8 +1380,8 @@ SString SciTEBase::LocaliseMessage(const char *s, const char *param0, const char
 	return translation;
 }
 
-void SciTEBase::ReadLocalisation() {
-	propsUI.Clear();
+void SciTEBase::ReadLocalization() {
+	localiser.Clear();
 	const char *title = "locale.properties";
 	SString localeProps = props.GetExpanded(title);
 	if (localeProps.length()) {
@@ -1363,8 +1389,9 @@ void SciTEBase::ReadLocalisation() {
 	}
 	FilePath propdir = GetSciteDefaultHome();
 	FilePath localePath(propdir, title);
-	propsUI.Read(localePath, propdir, importFiles, importMax);
-	localisationRead = true;
+	localiser.Read(localePath, propdir, importFiles, importMax);
+	localiser.SetMissing(props.Get("translation.missing"));
+	localiser.read = true;
 }
 
 void SciTEBase::ReadPropertiesInitial() {
@@ -1458,26 +1485,63 @@ FilePath SciTEBase::GetUserPropertiesFileName() {
 	return FilePath(GetSciteUserHome(), propUserFileName);
 }
 
+FilePath SciTEBase::GetLocalPropertiesFileName() {
+	return FilePath(filePath.Directory(), propLocalFileName);
+}
+
+FilePath SciTEBase::GetDirectoryPropertiesFileName() {
+	FilePath propfile;
+
+	if (filePath.IsSet()) {
+		propfile.Set(filePath.Directory(), propDirectoryFileName);
+
+		// if this file does not exist try to find the prop file in a parent directory
+		while (!propfile.Exists() && !propfile.Directory().IsRoot()) {
+			propfile.Set(propfile.Directory().Directory(), propDirectoryFileName);
+		}
+
+		// not found -> set it to the initial directory
+		if (!propfile.Exists()) {
+			propfile.Set(filePath.Directory(), propDirectoryFileName);
+		}
+	}
+	return propfile;
+}
+
 void SciTEBase::OpenProperties(int propsFile) {
 	FilePath propfile;
-	if (propsFile == IDM_OPENLOCALPROPERTIES) {
-		FilePath propdir = filePath.Directory();
-		propfile.Set(propdir, propFileName);
+	switch (propsFile) {
+	case IDM_OPENLOCALPROPERTIES:
+		propfile = GetLocalPropertiesFileName();
 		Open(propfile, ofQuiet);
-	} else if (propsFile == IDM_OPENUSERPROPERTIES) {
+		break;
+	case IDM_OPENUSERPROPERTIES:
 		propfile = GetUserPropertiesFileName();
 		Open(propfile, ofQuiet);
-	} else if (propsFile == IDM_OPENABBREVPROPERTIES) {
+		break;
+	case IDM_OPENABBREVPROPERTIES:
 		propfile = pathAbbreviations;
 		Open(propfile, ofQuiet);
-	} else if (propsFile == IDM_OPENGLOBALPROPERTIES) {
+		break;
+	case IDM_OPENGLOBALPROPERTIES:
 		propfile = GetDefaultPropertiesFileName();
 		Open(propfile, ofQuiet);
-	} else if (propsFile == IDM_OPENLUAEXTERNALFILE) {
-		SString extlua = props.GetExpanded("ext.lua.startup.script");
-		if (extlua.length()) {
-			Open(extlua.c_str(), ofQuiet);
+		break;
+	case IDM_OPENLUAEXTERNALFILE: {
+			SString extlua = props.GetExpanded("ext.lua.startup.script");
+			if (extlua.length()) {
+				Open(extlua.c_str(), ofQuiet);
+			}
+			break;
 		}
+	case IDM_OPENDIRECTORYPROPERTIES: {
+			propfile = GetDirectoryPropertiesFileName();
+			bool alreadyExists = propfile.Exists();
+			Open(propfile, ofQuiet);
+			if (!alreadyExists)
+				SaveAsDialog();
+		}
+		break;
 	}
 }
 
@@ -1614,6 +1678,7 @@ int SciTEBase::GetMenuCommandAsInt(SString commandName) {
 		{"IDM_OPENGLOBALPROPERTIES",	IDM_OPENGLOBALPROPERTIES},
 		{"IDM_OPENABBREVPROPERTIES",	IDM_OPENABBREVPROPERTIES},
 		{"IDM_OPENLUAEXTERNALFILE",	IDM_OPENLUAEXTERNALFILE},
+		{"IDM_OPENDIRECTORYPROPERTIES",	IDM_OPENDIRECTORYPROPERTIES},
 		{"IDM_PREVFILE",	IDM_PREVFILE},
 		{"IDM_NEXTFILE",	IDM_NEXTFILE},
 		{"IDM_CLOSEALL",	IDM_CLOSEALL},

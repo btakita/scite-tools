@@ -28,11 +28,11 @@ BEGIN
 	MENUITEM "Save a Co&py...\tCtrl+Shift+P",			IDM_SAVEACOPY
 	POPUP "Encodin&g"
 	BEGIN
-		MENUITEM "&8 Bit",		IDM_ENCODING_DEFAULT
+		MENUITEM "&Code Page Property",		IDM_ENCODING_DEFAULT
 		MENUITEM "UCS-2 &Big Endian",		IDM_ENCODING_UCS2BE
 		MENUITEM "UCS-2 &Little Endian",		IDM_ENCODING_UCS2LE
-		MENUITEM "&UTF-8",		IDM_ENCODING_UTF8
-		MENUITEM "UTF-8 &Cookie",		IDM_ENCODING_UCOOKIE
+		MENUITEM "UTF-8 &with BOM",		IDM_ENCODING_UTF8
+		MENUITEM "&UTF-8",		IDM_ENCODING_UCOOKIE
 	END
 	POPUP "&Export"
 	BEGIN
@@ -154,6 +154,7 @@ BEGIN
 	MENUITEM "Use &Monospaced Font\tCtrl+F11",	IDM_MONOFONT
 	MENUITEM SEPARATOR
 	MENUITEM "Open Local &Options File",		IDM_OPENLOCALPROPERTIES
+	MENUITEM "Open &Directory Options File",		IDM_OPENDIRECTORYPROPERTIES
 	MENUITEM "Open &User Options File",		IDM_OPENUSERPROPERTIES
 	MENUITEM "Open &Global Options File",		IDM_OPENGLOBALPROPERTIES
 	MENUITEM "Open A&bbreviations File",		IDM_OPENABBREVPROPERTIES
@@ -580,8 +581,8 @@ IDC_MARGIN         CURSOR  DISCARDABLE     "Margin.cur"
 #endif
 
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION	1, 7, 2, 0
-PRODUCTVERSION	1, 7, 2, 0
+FILEVERSION	1, 7, 3, 0
+PRODUCTVERSION	1, 7, 3, 0
 FILEFLAGSMASK	0x3fL
 FILEFLAGS 0
 FILEOS VOS_NT_WINDOWS32
@@ -598,12 +599,12 @@ BEGIN
 		BEGIN
 			VALUE	"CompanyName",	"Neil Hodgson neilh@scintilla.org\0"
 			VALUE	"FileDescription",	"SciTE - a Scintilla based Text Editor\0"
-			VALUE	"FileVersion",	"1.72\0"
+			VALUE	"FileVersion",	"1.73\0"
 			VALUE	"InternalName",	"SciTE\0"
 			VALUE	"LegalCopyright",	"Copyright 1998-2007 by Neil Hodgson\0"
 			VALUE	"OriginalFilename",	"SciTE.EXE\0"
 			VALUE	"ProductName",	"SciTE\0"
-			VALUE	"ProductVersion",	"1.72\0"
+			VALUE	"ProductVersion",	"1.73\0"
 		END
 	END
 END

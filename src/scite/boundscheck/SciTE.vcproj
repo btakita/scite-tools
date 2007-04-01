@@ -27,7 +27,7 @@
 				OmitFramePointers="TRUE"
 				OptimizeForWindowsApplication="TRUE"
 				AdditionalIncludeDirectories="..\src;..\lua\include;..\..\scintilla\include;..\..\scintilla\src"
-				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;STATIC_BUILD;SCI_LEXER;LINK_LEXERS"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;STATIC_BUILD;SCI_LEXER;LINK_LEXERS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="FALSE"
 				PrecompiledHeaderFile=".\Release/SciTE.pch"
@@ -92,20 +92,20 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\src;..\lua\include;..\..\scintilla\include;..\..\scintilla\src"
-				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;STATIC_BUILD;SCI_LEXER;LINK_LEXERS"
+				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;STATIC_BUILD;SCI_LEXER;LINK_LEXERS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile=".\Debug/SciTE.pch"
 				AssemblerListingLocation=".\Debug/"
 				ObjectFile=".\Debug/"
 				ProgramDataBaseFileName=".\Debug/"
-				BrowseInformation="2"
+				BrowseInformation="1"
 				WarningLevel="4"
 				SuppressStartupBanner="TRUE"
 				Detect64BitPortabilityProblems="FALSE"
 				DebugInformationFormat="4"
 				CompileAs="0"
-				DisableSpecificWarnings="4702"/>
+				DisableSpecificWarnings="4702;4244"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
@@ -226,13 +226,16 @@
 				RelativePath="..\lua\src\ldump.c">
 			</File>
 			<File
-				RelativePath="..\..\scintilla\src\LexLisp.cxx">
-			</File>
-			<File
-				RelativePath="..\..\scintilla\src\LexD.cxx">
+				RelativePath="..\..\scintilla\src\LexAda.cxx">
 			</File>
 			<File
 				RelativePath="..\..\scintilla\src\LexAPDL.cxx">
+			</File>
+			<File
+				RelativePath="..\..\scintilla\src\LexAsm.cxx">
+			</File>
+			<File
+				RelativePath="..\..\scintilla\src\LexAsn1.cxx">
 			</File>
 			<File
 				RelativePath="..\..\scintilla\src\LexAU3.cxx">
@@ -241,25 +244,31 @@
 				RelativePath="..\..\scintilla\src\LexAVE.cxx">
 			</File>
 			<File
-				RelativePath="..\..\scintilla\src\LexAda.cxx">
+				RelativePath="..\..\scintilla\src\LexBaan.cxx">
+			</File>
+			<File
+				RelativePath="..\..\scintilla\src\LexBash.cxx">
 			</File>
 			<File
 				RelativePath="..\..\scintilla\src\LexBasic.cxx">
 			</File>
 			<File
-				RelativePath="..\..\scintilla\src\LexAsn1.cxx">
-			</File>
-			<File
-				RelativePath="..\..\scintilla\src\LexBaan.cxx">
-			</File>
-			<File
 				RelativePath="..\..\scintilla\src\LexBullant.cxx">
+			</File>
+			<File
+				RelativePath="..\..\scintilla\src\LexCaml.cxx">
 			</File>
 			<File
 				RelativePath="..\..\scintilla\src\LexCLW.cxx">
 			</File>
 			<File
-				RelativePath="..\..\scintilla\src\LexCaml.cxx">
+				RelativePath="..\..\scintilla\src\LexCmake.cxx">
+			</File>
+			<File
+				RelativePath="..\..\scintilla\src\LexConf.cxx">
+			</File>
+			<File
+				RelativePath="..\..\scintilla\src\LexCPP.cxx">
 			</File>
 			<File
 				RelativePath="..\..\scintilla\src\LexCrontab.cxx">
@@ -268,52 +277,28 @@
 				RelativePath="..\..\scintilla\src\LexCsound.cxx">
 			</File>
 			<File
-				RelativePath="..\..\scintilla\src\LexEScript.cxx">
+				RelativePath="..\..\scintilla\src\LexCSS.cxx">
 			</File>
 			<File
-				RelativePath="..\..\scintilla\src\LexForth.cxx">
-			</File>
-			<File
-				RelativePath="..\..\scintilla\src\LexHTML.cxx">
-			</File>
-			<File
-				RelativePath="..\..\scintilla\src\LexBash.cxx">
-			</File>
-			<File
-				RelativePath="..\..\scintilla\src\LexRuby.cxx">
-			</File>
-			<File
-				RelativePath="..\..\scintilla\src\LexInno.cxx">
+				RelativePath="..\..\scintilla\src\LexD.cxx">
 			</File>
 			<File
 				RelativePath="..\..\scintilla\src\LexEiffel.cxx">
 			</File>
 			<File
-				RelativePath="..\..\scintilla\src\LexCSS.cxx">
+				RelativePath="..\..\scintilla\src\LexErlang.cxx">
 			</File>
 			<File
-				RelativePath="..\..\scintilla\src\LexErlang.cxx">
+				RelativePath="..\..\scintilla\src\LexEScript.cxx">
 			</File>
 			<File
 				RelativePath="..\..\scintilla\src\LexFlagship.cxx">
 			</File>
 			<File
-				RelativePath="..\..\scintilla\src\LexYAML.cxx">
-			</File>
-			<File
-				RelativePath="..\..\scintilla\src\LexKix.cxx">
-			</File>
-			<File
-				RelativePath="..\..\scintilla\src\LexLout.cxx">
-			</File>
-			<File
-				RelativePath="..\..\scintilla\src\LexCPP.cxx">
+				RelativePath="..\..\scintilla\src\LexForth.cxx">
 			</File>
 			<File
 				RelativePath="..\..\scintilla\src\LexFortran.cxx">
-			</File>
-			<File
-				RelativePath="..\..\scintilla\src\LexMPT.cxx">
 			</File>
 			<File
 				RelativePath="..\..\scintilla\src\LexGui4Cli.cxx">
@@ -322,10 +307,22 @@
 				RelativePath="..\..\scintilla\src\LexHaskell.cxx">
 			</File>
 			<File
-				RelativePath="..\..\scintilla\src\LexMMIXAL.cxx">
+				RelativePath="..\..\scintilla\src\LexHTML.cxx">
 			</File>
 			<File
-				RelativePath="..\..\scintilla\src\LexMSSQL.cxx">
+				RelativePath="..\..\scintilla\src\LexInno.cxx">
+			</File>
+			<File
+				RelativePath="..\..\scintilla\src\LexKix.cxx">
+			</File>
+			<File
+				RelativePath="..\..\scintilla\src\LexLisp.cxx">
+			</File>
+			<File
+				RelativePath="..\..\scintilla\src\LexLout.cxx">
+			</File>
+			<File
+				RelativePath="..\..\scintilla\src\LexLua.cxx">
 			</File>
 			<File
 				RelativePath="..\..\scintilla\src\LexMatlab.cxx">
@@ -334,31 +331,31 @@
 				RelativePath="..\..\scintilla\src\LexMetapost.cxx">
 			</File>
 			<File
-				RelativePath="..\..\scintilla\src\LexPerl.cxx">
+				RelativePath="..\..\scintilla\src\LexMMIXAL.cxx">
+			</File>
+			<File
+				RelativePath="..\..\scintilla\src\LexMPT.cxx">
+			</File>
+			<File
+				RelativePath="..\..\scintilla\src\LexMSSQL.cxx">
 			</File>
 			<File
 				RelativePath="..\..\scintilla\src\LexNsis.cxx">
 			</File>
 			<File
-				RelativePath="..\..\scintilla\src\LexOthers.cxx">
-			</File>
-			<File
-				RelativePath="..\..\scintilla\src\LexVB.cxx">
-			</File>
-			<File
 				RelativePath="..\..\scintilla\src\LexOpal.cxx">
 			</File>
 			<File
-				RelativePath="..\..\scintilla\src\LexAsm.cxx">
+				RelativePath="..\..\scintilla\src\LexOthers.cxx">
 			</File>
 			<File
-				RelativePath="..\..\scintilla\src\LexLua.cxx">
-			</File>
-			<File
-				RelativePath="..\..\scintilla\src\LexPython.cxx">
+				RelativePath="..\..\scintilla\src\LexPascal.cxx">
 			</File>
 			<File
 				RelativePath="..\..\scintilla\src\LexPB.cxx">
+			</File>
+			<File
+				RelativePath="..\..\scintilla\src\LexPerl.cxx">
 			</File>
 			<File
 				RelativePath="..\..\scintilla\src\LexPOV.cxx">
@@ -367,16 +364,22 @@
 				RelativePath="..\..\scintilla\src\LexPS.cxx">
 			</File>
 			<File
-				RelativePath="..\..\scintilla\src\LexConf.cxx">
-			</File>
-			<File
-				RelativePath="..\..\scintilla\src\LexPascal.cxx">
+				RelativePath="..\..\scintilla\src\LexPython.cxx">
 			</File>
 			<File
 				RelativePath="..\..\scintilla\src\LexRebol.cxx">
 			</File>
 			<File
+				RelativePath="..\..\scintilla\src\LexRuby.cxx">
+			</File>
+			<File
 				RelativePath="..\..\scintilla\src\LexScriptol.cxx">
+			</File>
+			<File
+				RelativePath="..\..\scintilla\src\LexSmalltalk.cxx">
+			</File>
+			<File
+				RelativePath="..\..\scintilla\src\LexSpecman.cxx">
 			</File>
 			<File
 				RelativePath="..\..\scintilla\src\LexSpice.cxx">
@@ -388,22 +391,22 @@
 				RelativePath="..\..\scintilla\src\LexTADS3.cxx">
 			</File>
 			<File
-				RelativePath="..\..\scintilla\src\LexSmalltalk.cxx">
-			</File>
-			<File
-				RelativePath="..\..\scintilla\src\LexSpecman.cxx">
-			</File>
-			<File
 				RelativePath="..\..\scintilla\src\LexTCL.cxx">
 			</File>
 			<File
 				RelativePath="..\..\scintilla\src\LexTeX.cxx">
 			</File>
 			<File
-				RelativePath="..\..\scintilla\src\LexVHDL.cxx">
+				RelativePath="..\..\scintilla\src\LexVB.cxx">
 			</File>
 			<File
 				RelativePath="..\..\scintilla\src\LexVerilog.cxx">
+			</File>
+			<File
+				RelativePath="..\..\scintilla\src\LexVHDL.cxx">
+			</File>
+			<File
+				RelativePath="..\..\scintilla\src\LexYAML.cxx">
 			</File>
 
 			<File

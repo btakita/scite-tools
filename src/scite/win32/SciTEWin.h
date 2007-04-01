@@ -109,6 +109,8 @@ protected:
 	HWND wFocus;
 
 	Window wFindInFiles;
+	Window wFindReplace;
+	Window wParameters;
 
 	virtual void ReadProperties();
 
@@ -116,7 +118,7 @@ protected:
 	virtual void SizeSubWindows();
 
 	virtual void SetMenuItem(int menuNumber, int position, int itemID,
-													 const char *text, const char *mnemonic = 0);
+	                         const char *text, const char *mnemonic = 0);
 	virtual void DestroyMenuItem(int menuNumber, int itemID);
 	virtual void CheckAMenuItem(int wIDCheckItem, bool val);
 	virtual void EnableAMenuItem(int wIDCheckItem, bool val);
@@ -216,6 +218,7 @@ protected:
 	static BOOL CALLBACK TabSizeDlg(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 	virtual void TabSizeDialog();
 
+	virtual bool ParametersOpen();
 	void ParamGrab();
 	virtual bool ParametersDialog(bool modal);
 	BOOL ParametersMessage(HWND hDlg, UINT message, WPARAM wParam);
@@ -263,9 +266,9 @@ public:
 	uptr_t GetInstance();
 	static void Register(HINSTANCE hInstance_);
 	static LRESULT PASCAL TWndProc(
-			HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam);
+	    HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam);
 	static LRESULT PASCAL IWndProc(
-			HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam);
+	    HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam);
 
 	friend class UniqueInstance;
 };

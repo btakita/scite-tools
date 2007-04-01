@@ -97,6 +97,8 @@ long SciTEKeys::ParseKeyCode(const char *mnemonic) {
 				keyval = VK_RETURN;
 			} else if (sKey == "Space") {
 				keyval = VK_SPACE;
+			} else if (sKey == "Tab") {
+				keyval = VK_TAB;
 			} else if (sKey == "Escape") {
 				keyval = VK_ESCAPE;
 			} else if (sKey == "Delete") {
@@ -171,7 +173,7 @@ SciTEWin::SciTEWin(Extension *ext) : SciTEBase(ext) {
 			const void *pv = ::LockResource(hmem);
 			if (pv) {
 				propsEmbed.ReadFromMemory(
-						reinterpret_cast<const char *>(pv), size, FilePath());
+				    reinterpret_cast<const char *>(pv), size, FilePath());
 			}
 		}
 		::FreeResource(handProps);
@@ -290,9 +292,9 @@ void SciTEWin::ExecuteOtherHelp(const char *cmd) {
 			*path = '\0';
 			path++;	// After the !
 			::WinHelp(MainHWND(),
-								path,
-								HELP_KEY,
-								reinterpret_cast<unsigned long>(topic));
+			          path,
+			          HELP_KEY,
+			          reinterpret_cast<unsigned long>(topic));
 		}
 	}
 	delete []topic;
@@ -334,10 +336,10 @@ void SciTEWin::ExecuteHelp(const char *cmd) {
 				ak.pszWindow = NULL;
 				ak.fIndexOnFail = TRUE;
 				fnHHA(NULL,
-							path,
-							0x000d,          	// HH_KEYWORD_LOOKUP
-							reinterpret_cast<DWORD>(&ak)
-						 );
+				      path,
+				      0x000d,          	// HH_KEYWORD_LOOKUP
+				      reinterpret_cast<DWORD>(&ak)
+				     );
 			}
 		}
 		delete []topic;
@@ -390,17 +392,17 @@ void SciTEWin::FullScreenToggle() {
 		winPlace.length = sizeof(winPlace);
 		::GetWindowPlacement(MainHWND(), &winPlace);
 		int topStuff = ::GetSystemMetrics(SM_CYCAPTION) +
-									 ::GetSystemMetrics(SM_CYEDGE);
+		               ::GetSystemMetrics(SM_CYEDGE);
 		if (props.GetInt("full.screen.hides.menu"))
 			topStuff += ::GetSystemMetrics(SM_CYMENU);
 		::SetWindowPos(MainHWND(), HWND_TOP,
-									 -::GetSystemMetrics(SM_CXSIZEFRAME) - 1,
-									 -topStuff - 2,
-									 ::GetSystemMetrics(SM_CXSCREEN) +
-									 2 * ::GetSystemMetrics(SM_CXSIZEFRAME) + 2,
-									 ::GetSystemMetrics(SM_CYSCREEN) + topStuff +
-									 ::GetSystemMetrics(SM_CYSIZEFRAME) + 3,
-									 0);
+		               -::GetSystemMetrics(SM_CXSIZEFRAME) - 1,
+		               -topStuff - 2,
+		               ::GetSystemMetrics(SM_CXSCREEN) +
+		               2 * ::GetSystemMetrics(SM_CXSIZEFRAME) + 2,
+		               ::GetSystemMetrics(SM_CYSCREEN) + topStuff +
+		               ::GetSystemMetrics(SM_CYSIZEFRAME) + 3,
+		               0);
 	} else {
 		::ShowWindow(wTaskBar, SW_SHOW);
 		if (winPlace.length) {
@@ -425,6 +427,10 @@ void SciTEWin::Command(WPARAM wParam, LPARAM lParam) {
 	int cmdID = ControlIDOfCommand(wParam);
 	if (wParam & 0x10000) {
 		// From accelerator -> goes to focused pane.
+		menuSource = 0;
+	}
+	if (reinterpret_cast<HWND>(lParam) == wToolBar.GetID()) {
+		// From toolbar -> goes to focused pane.
 		menuSource = 0;
 	}
 
@@ -594,7 +600,7 @@ DWORD SciTEWin::ExecuteOne(const Job &jobToRun, bool &seenOutput) {
 	// Make child process use hPipeWrite as standard out, and make
 	// sure it does not show on screen.
 	STARTUPINFO si = {
-					 sizeof(STARTUPINFO), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+			     sizeof(STARTUPINFO), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 			 };
 	si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
 	if (jobToRun.jobType == jobCLI)
@@ -610,14 +616,14 @@ DWORD SciTEWin::ExecuteOne(const Job &jobToRun, bool &seenOutput) {
 	PROCESS_INFORMATION pi = {0, 0, 0, 0};
 
 	bool running = ::CreateProcess(
-				NULL,
-				const_cast<char *>(jobToRun.command.c_str()),
-				NULL, NULL,
-				TRUE, CREATE_NEW_PROCESS_GROUP,
-				NULL,
-				startDirectory.IsSet() ?
-				static_cast<const char *>(startDirectory.AsFileSystem()) : NULL,
-				&si, &pi);
+			  NULL,
+			  const_cast<char *>(jobToRun.command.c_str()),
+			  NULL, NULL,
+			  TRUE, CREATE_NEW_PROCESS_GROUP,
+			  NULL,
+			  startDirectory.IsSet() ?
+			  static_cast<const char *>(startDirectory.AsFileSystem()) : NULL,
+			  &si, &pi);
 
 	if (running) {
 		subProcessGroupId = pi.dwProcessId;
@@ -653,7 +659,7 @@ DWORD SciTEWin::ExecuteOne(const Job &jobToRun, bool &seenOutput) {
 			DWORD bytesAvail = 0;
 
 			if (!::PeekNamedPipe(hPipeRead, buffer,
-							 sizeof(buffer), &bytesRead, &bytesAvail, NULL)) {
+					     sizeof(buffer), &bytesRead, &bytesAvail, NULL)) {
 				bytesAvail = 0;
 			}
 
@@ -672,8 +678,8 @@ DWORD SciTEWin::ExecuteOne(const Job &jobToRun, bool &seenOutput) {
 				DWORD bytesWrote = 0;
 
 				int bTest = ::WriteFile(hWriteSubProcess,
-							const_cast<char *>(jobToRun.input.c_str() + writingPosition),
-							bytesToWrite, &bytesWrote, NULL);
+					    const_cast<char *>(jobToRun.input.c_str() + writingPosition),
+					    bytesToWrite, &bytesWrote, NULL);
 
 				if (bTest) {
 					if ((writingPosition + bytesToWrite) / 1024 > writingPosition / 1024) {
@@ -703,7 +709,7 @@ DWORD SciTEWin::ExecuteOne(const Job &jobToRun, bool &seenOutput) {
 
 			} else if (bytesAvail > 0) {
 				int bTest = ::ReadFile(hPipeRead, buffer,
-									 sizeof(buffer), &bytesRead, NULL);
+						       sizeof(buffer), &bytesRead, NULL);
 
 				if (bTest && bytesRead) {
 
@@ -792,15 +798,15 @@ DWORD SciTEWin::ExecuteOne(const Job &jobToRun, bool &seenOutput) {
 		DWORD nRet = ::GetLastError();
 		LPTSTR lpMsgBuf = NULL;
 		::FormatMessage(
-				FORMAT_MESSAGE_ALLOCATE_BUFFER |
-				FORMAT_MESSAGE_FROM_SYSTEM |
-				FORMAT_MESSAGE_IGNORE_INSERTS,
-				NULL,
-				nRet,
-				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),   // Default language
-				reinterpret_cast<LPTSTR>(&lpMsgBuf),
-				0,
-				NULL
+		    FORMAT_MESSAGE_ALLOCATE_BUFFER |
+		    FORMAT_MESSAGE_FROM_SYSTEM |
+		    FORMAT_MESSAGE_IGNORE_INSERTS,
+		    NULL,
+		    nRet,
+		    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),   // Default language
+		    reinterpret_cast<LPTSTR>(&lpMsgBuf),
+		    0,
+		    NULL
 		);
 		OutputAppendStringSynchronised(">");
 		OutputAppendStringSynchronised(lpMsgBuf);
@@ -915,13 +921,13 @@ void SciTEWin::ShellExec(const SString &cmd, const char *dir) {
 	}
 
 	uptr_t rc = reinterpret_cast<uptr_t>(
-									::ShellExecute(
-											MainHWND(),          // parent wnd for msgboxes during app start
-											NULL,           // cmd is open
-											mycmd,          // file to open
-											myparams,          // parameters
-											dir,          // launch directory
-											SW_SHOWNORMAL)); //default show cmd
+	                ::ShellExecute(
+	                    MainHWND(),          // parent wnd for msgboxes during app start
+	                    NULL,           // cmd is open
+	                    mycmd,          // file to open
+	                    myparams,          // parameters
+	                    dir,          // launch directory
+	                    SW_SHOWNORMAL)); //default show cmd
 
 	if (rc > 32) {
 		// it worked!
@@ -931,22 +937,22 @@ void SciTEWin::ShellExec(const SString &cmd, const char *dir) {
 
 	const int numErrcodes = 15;
 	static const ShellErr field[numErrcodes] = {
-							{ 0, "The operating system is out of memory or resources." },
-							{ ERROR_FILE_NOT_FOUND, "The specified file was not found." },
-							{ ERROR_PATH_NOT_FOUND, "The specified path was not found." },
-							{ ERROR_BAD_FORMAT, "The .exe file is invalid (non-Win32\256 .exe or error in .exe image)." },
-							{ SE_ERR_ACCESSDENIED, "The operating system denied access to the specified file." },
-							{ SE_ERR_ASSOCINCOMPLETE, "The file name association is incomplete or invalid." },
-							{ SE_ERR_DDEBUSY, "The DDE transaction could not be completed because other DDE transactions were being processed." },
-							{ SE_ERR_DDEFAIL, "The DDE transaction failed." },
-							{ SE_ERR_DDETIMEOUT, "The DDE transaction could not be completed because the request timed out." },
-							{ SE_ERR_DLLNOTFOUND, "The specified dynamic-link library was not found." },
-							{ SE_ERR_FNF, "The specified file was not found." },
-							{ SE_ERR_NOASSOC, "There is no application associated with the given file name extension." },
-							{ SE_ERR_OOM, "There was not enough memory to complete the operation." },
-							{ SE_ERR_PNF, "The specified path was not found." },
-							{ SE_ERR_SHARE, "A sharing violation occurred." },
-					};
+	            { 0, "The operating system is out of memory or resources." },
+	            { ERROR_FILE_NOT_FOUND, "The specified file was not found." },
+	            { ERROR_PATH_NOT_FOUND, "The specified path was not found." },
+	            { ERROR_BAD_FORMAT, "The .exe file is invalid (non-Win32\256 .exe or error in .exe image)." },
+	            { SE_ERR_ACCESSDENIED, "The operating system denied access to the specified file." },
+	            { SE_ERR_ASSOCINCOMPLETE, "The file name association is incomplete or invalid." },
+	            { SE_ERR_DDEBUSY, "The DDE transaction could not be completed because other DDE transactions were being processed." },
+	            { SE_ERR_DDEFAIL, "The DDE transaction failed." },
+	            { SE_ERR_DDETIMEOUT, "The DDE transaction could not be completed because the request timed out." },
+	            { SE_ERR_DLLNOTFOUND, "The specified dynamic-link library was not found." },
+	            { SE_ERR_FNF, "The specified file was not found." },
+	            { SE_ERR_NOASSOC, "There is no application associated with the given file name extension." },
+	            { SE_ERR_OOM, "There was not enough memory to complete the operation." },
+	            { SE_ERR_PNF, "The specified path was not found." },
+	            { SE_ERR_SHARE, "A sharing violation occurred." },
+	        };
 
 	int i;
 	for (i = 0; i < numErrcodes; ++i) {
@@ -1010,7 +1016,7 @@ void SciTEWin::AddCommand(const SString &cmd, const SString &dir, JobSubsystem j
 			SString pCmd = cmd;
 			parameterisedCommand = "";
 			if (pCmd[0] == '*') {
-				pCmd.remove(0);
+				pCmd.remove(0, 1);
 				parameterisedCommand = pCmd;
 				if (!ParametersDialog(true)) {
 					return;
@@ -1047,22 +1053,22 @@ void SciTEWin::CreateUI() {
 		height = CW_USEDEFAULT;
 	}
 	if (props.GetInt("position.tile") && ::FindWindow("SciTEWindow", NULL) &&
-					(left != static_cast<int>(CW_USEDEFAULT))) {
+	        (left != static_cast<int>(CW_USEDEFAULT))) {
 		left += width;
 	}
 	// Pass 'this' pointer in lpParam of CreateWindow().
 	wSciTE = ::CreateWindowEx(
-							 0,
-							 className,
-							 windowName.c_str(),
-							 WS_CAPTION | WS_SYSMENU | WS_THICKFRAME |
-							 WS_MINIMIZEBOX | WS_MAXIMIZEBOX |
-							 WS_CLIPCHILDREN,
-							 left, top, width, height,
-							 NULL,
-							 NULL,
-							 hInstance,
-							 reinterpret_cast<LPSTR>(this));
+	             0,
+	             className,
+	             windowName.c_str(),
+	             WS_CAPTION | WS_SYSMENU | WS_THICKFRAME |
+	             WS_MINIMIZEBOX | WS_MAXIMIZEBOX |
+	             WS_CLIPCHILDREN,
+	             left, top, width, height,
+	             NULL,
+	             NULL,
+	             hInstance,
+	             reinterpret_cast<LPSTR>(this));
 	if (!wSciTE.Created())
 		exit(FALSE);
 
@@ -1381,7 +1387,7 @@ void SciTEWin::MinimizeToTray() {
 	nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
 	nid.uCallbackMessage = SCITE_TRAY;
 	nid.hIcon = static_cast<HICON>(
-									::LoadImage(hInstance, "SCITE", IMAGE_ICON, 16, 16, LR_DEFAULTSIZE));
+	                ::LoadImage(hInstance, "SCITE", IMAGE_ICON, 16, 16, LR_DEFAULTSIZE));
 	strcpy(nid.szTip, n);
 	::ShowWindow(MainHWND(), SW_MINIMIZE);
 	if (::Shell_NotifyIcon(NIM_ADD, &nid)) {
@@ -1419,9 +1425,9 @@ inline bool KeyMatch(const SString &sKey, int keyval, int modifiers) {
 LRESULT SciTEWin::KeyDown(WPARAM wParam) {
 	// Look through lexer menu
 	int modifiers =
-			(Platform::IsKeyDown(VK_SHIFT) ? SCMOD_SHIFT : 0) |
-			(Platform::IsKeyDown(VK_CONTROL) ? SCMOD_CTRL : 0) |
-			(Platform::IsKeyDown(VK_MENU) ? SCMOD_ALT : 0);
+	    (Platform::IsKeyDown(VK_SHIFT) ? SCMOD_SHIFT : 0) |
+	    (Platform::IsKeyDown(VK_CONTROL) ? SCMOD_CTRL : 0) |
+	    (Platform::IsKeyDown(VK_MENU) ? SCMOD_ALT : 0);
 
 	if (extender && extender->OnKey(wParam, modifiers)) // added by Mitchell
 		return 1l; // added by Mitchell
@@ -1477,7 +1483,7 @@ LRESULT SciTEWin::KeyUp(WPARAM wParam) {
 }
 
 void SciTEWin::AddToPopUp(const char *label, int cmd, bool enabled) {
-	SString localised = LocaliseString(label);
+	SString localised = localiser.Text(label);
 	HMENU menu = reinterpret_cast<HMENU>(popup.GetID());
 	if (0 == localised.length())
 		::AppendMenu(menu, MF_SEPARATOR, 0, "");
@@ -1581,13 +1587,13 @@ LRESULT SciTEWin::WndProc(UINT iMessage, WPARAM wParam, LPARAM lParam) {
 			if (fullScreen) {
 				// Last constants for both x and y are just fiddles - don't know why they are needed
 				pmmi->ptMaxSize.x = ::GetSystemMetrics(SM_CXSCREEN) +
-														2 * ::GetSystemMetrics(SM_CXSIZEFRAME) +
-														2;
+				                    2 * ::GetSystemMetrics(SM_CXSIZEFRAME) +
+				                    2;
 				pmmi->ptMaxSize.y = ::GetSystemMetrics(SM_CYSCREEN) +
-														::GetSystemMetrics(SM_CYCAPTION) +
-														::GetSystemMetrics(SM_CYMENU) +
-														2 * ::GetSystemMetrics(SM_CYSIZEFRAME) +
-														3;
+				                    ::GetSystemMetrics(SM_CYCAPTION) +
+				                    ::GetSystemMetrics(SM_CYMENU) +
+				                    2 * ::GetSystemMetrics(SM_CYSIZEFRAME) +
+				                    3;
 				pmmi->ptMaxTrackSize.x = pmmi->ptMaxSize.x;
 				pmmi->ptMaxTrackSize.y = pmmi->ptMaxSize.y;
 				return 0;
@@ -1702,7 +1708,7 @@ static void SetWindowPointer(HWND hWnd, void *ptr) {
 #endif
 
 LRESULT PASCAL SciTEWin::TWndProc(
-		HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam) {
+    HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam) {
 	//Platform::DebugPrintf("W:%x M:%d WP:%x L:%x\n", hWnd, iMessage, wParam, lParam);
 
 	// Find C++ object associated with window.
@@ -1793,14 +1799,14 @@ LRESULT SciTEWin::WndProcI(UINT iMessage, WPARAM wParam, LPARAM lParam) {
 	default:
 		//Platform::DebugPrintf("default wnd proc %x %d %d\n",iMessage, wParam, lParam);
 		return ::DefWindowProc(reinterpret_cast<HWND>(wContent.GetID()),
-													 iMessage, wParam, lParam);
+		                       iMessage, wParam, lParam);
 	}
 	//Platform::DebugPrintf("end wnd proc\n");
 	return 0l;
 }
 
 LRESULT PASCAL SciTEWin::IWndProc(
-		HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam) {
+    HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam) {
 	//Platform::DebugPrintf("W:%x M:%d WP:%x L:%x\n", hWnd, iMessage, wParam, lParam);
 
 	// Find C++ object associated with window.
@@ -1831,7 +1837,7 @@ bool IsWindowsNT() {
 static UINT CodePageFromCharSet(DWORD characterSet, UINT documentCodePage) {
 	CHARSETINFO ci = { 0, 0, { { 0, 0, 0, 0 }, { 0, 0 } } };
 	BOOL bci = ::TranslateCharsetInfo((DWORD*)characterSet,
-																		&ci, TCI_SRCCHARSET);
+	                                  &ci, TCI_SRCCHARSET);
 
 	UINT cp;
 	if (bci)
@@ -1882,8 +1888,6 @@ SString SciTEWin::EncodeString(const SString &s) {
 SString SciTEWin::GetRangeInUIEncoding(Window &win, int selStart, int selEnd) {
 	SString s = SciTEBase::GetRangeInUIEncoding(win, selStart, selEnd);
 
-	//::MessageBox(GetFocus(),s.c_str(),"GetRangeInUIEncoding:in",0);
-
 	if (IsWindowsNT()) {
 		UINT codePage = SendEditor(SCI_GETCODEPAGE);
 
@@ -1905,7 +1909,6 @@ SString SciTEWin::GetRangeInUIEncoding(Window &win, int selStart, int selEnd) {
 			delete []pszWide;
 			delete []pszMulti;
 
-			//::MessageBox(GetFocus(),result.c_str(),"GetRangeInUIEncoding:out",0);
 			return result;
 		}
 	}

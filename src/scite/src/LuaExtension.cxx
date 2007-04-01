@@ -294,6 +294,14 @@ static int cf_scite_open(lua_State *L) {
 	return 0;
 }
 
+static int cf_scite_menu_command(lua_State *L) {
+	int cmdID = luaL_checkint(L, 1);
+	if (cmdID) {
+		host->DoMenuCommand(cmdID);
+	}
+	return 0;
+}
+
 // added by Mitchell
 static int cf_global_inputdialog(lua_State *L) {
 	if (lua_isstring(L, 1) && lua_isstring(L, 2)) {
@@ -305,12 +313,6 @@ static int cf_global_inputdialog(lua_State *L) {
 		if (result)	delete []result;
 	} else raise_error(L, "Expected string parameters in 'inputdialog'.");
 	return 1;
-}
-
-static int cf_scite_menu_command(lua_State *L) {
-	int cmdID = luaL_checkint(L, 1);
-	if (cmdID) host->DoMenuCommand(cmdID);
-	return 0;
 }
 
 static int cf_scite_update_status_bar(lua_State *L) {
@@ -1601,9 +1603,9 @@ bool LuaExtension::Finalise() {
 }
 
 bool LuaExtension::Clear() {
-	if (luaState) {
-		CallNamedFunction("OnClear");
-	}
+	if (luaState) { // added by Mitchell
+		CallNamedFunction("OnClear"); // added by Mitchell
+	} // added by Mitchell
 	if (luaState) {
 		InitGlobalScope(true);
 		extensionScript.clear();
