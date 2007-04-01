@@ -21,7 +21,7 @@ Source Code:
       Bash, C/C++, CSS, default, HTML/XML, Java, Lua, Perl, PHP,
       Python, Ruby, and YAML.
 
-  src/ contains customized Scintilla/SciTE code (as of v1.72)
+  src/ contains customized Scintilla/SciTE code (as of v1.73)
     Linux and Windows customizations:
       AutoCSeparator is '|', not '?'
       Calltip colors match dark color scheme
