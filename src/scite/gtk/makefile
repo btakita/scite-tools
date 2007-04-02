@@ -74,7 +74,7 @@ ifdef LUA51
 
 LUA_CORE_OBJS = lapi.o lcode.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o \
     lmem.o lobject.o lopcodes.o lparser.o lstate.o lstring.o \
-    ltable.o ltests.o ltm.o lundump.o lvm.o lzio.o
+    ltable.o ltm.o lundump.o lvm.o lzio.o
 LUA_LIB_OBJS =  lauxlib.o lbaselib.o ldblib.o liolib.o lmathlib.o ltablib.o \
     lstrlib.o loadlib.o loslib.o linit.o lbitlib.o
 LUA_OBJS=LuaExtension51.o IFaceTable.o $(LUA_CORE_OBJS) $(LUA_LIB_OBJS)
@@ -90,7 +90,7 @@ else
 
 LUA_CORE_OBJS = lapi.o lcode.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o \
 		lmem.o lobject.o lopcodes.o lparser.o lstate.o lstring.o \
-		ltable.o ltests.o ltm.o lundump.o lvm.o lzio.o
+		ltable.o ltm.o lundump.o lvm.o lzio.o
 LUA_LIB_OBJS =	lauxlib.o lbaselib.o ldblib.o liolib.o lmathlib.o ltablib.o \
 		lstrlib.o loadlib.o
 LUA_OBJS = LuaExtension.o IFaceTable.o $(LUA_CORE_OBJS) $(LUA_LIB_OBJS)

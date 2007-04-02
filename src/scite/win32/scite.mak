@@ -254,7 +254,7 @@ PROPS=$(DIR_BIN)\SciTEGlobal.properties $(DIR_BIN)\abbrev.properties $(LEXPROPS)
 
 LUA_CORE_OBJS = lapi.obj lcode.obj ldebug.obj ldo.obj ldump.obj lfunc.obj lgc.obj llex.obj \
     lmem.obj lobject.obj lopcodes.obj lparser.obj lstate.obj lstring.obj \
-    ltable.obj ltests.obj ltm.obj lundump.obj lvm.obj lzio.obj
+    ltable.obj ltm.obj lundump.obj lvm.obj lzio.obj
 
 LUA_LIB_OBJS =  lauxlib.obj lbaselib.obj ldblib.obj liolib.obj lmathlib.obj ltablib.obj \
     lstrlib.obj loadlib.obj loslib.obj linit.obj lbitlib.obj
@@ -269,7 +269,7 @@ INCLUDEDIRS = $(INCLUDEDIRS) -I../lua51/include -I../lua51/src
 
 LUA_CORE_OBJS = lapi.obj lcode.obj ldebug.obj ldo.obj ldump.obj lfunc.obj lgc.obj llex.obj \
 		lmem.obj lobject.obj lopcodes.obj lparser.obj lstate.obj lstring.obj \
-		ltable.obj ltests.obj ltm.obj lundump.obj lvm.obj lzio.obj
+		ltable.obj ltm.obj lundump.obj lvm.obj lzio.obj
 
 LUA_LIB_OBJS =	lauxlib.obj lbaselib.obj ldblib.obj liolib.obj lmathlib.obj ltablib.obj \
                 lstrlib.obj loadlib.obj
