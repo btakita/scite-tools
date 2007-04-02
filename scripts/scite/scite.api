@@ -18,7 +18,7 @@ scite.SendOutput(SCI_constant, ...) sends a message to the output pane
 scite.ConstantName(number) returns the symbolic name of a Scintilla / SciTE constant
 scite.MenuCommand(number) executes a SciTE menu command
 scite.UpdateStatusBar(bool=false) updates SciTE statusbar; bool is bUpdateSlowData
-scite.Buffers() returns list of names of open buffers delimited by ';'s
+scite.BufferPath(index) returns path of buffer at index
 scite.SwitchToBuffer(index) switches to buffer specified by index
 
 props
