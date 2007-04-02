@@ -1,5 +1,5 @@
 /*
-** $Id: luaconf.h,v 1.82 2006/04/10 18:27:23 roberto Exp $
+** $Id: luaconf.h,v 1.82a 2006/04/10 18:27:23 roberto Exp $
 ** Configuration file for Lua
 ** See Copyright Notice in lua.h
 */
@@ -142,6 +142,7 @@
 */
 #define LUA_INTEGER	ptrdiff_t
 
+
 /*
 @@ LUA_API is a mark for all core API functions.
 @@ LUALIB_API is a mark for all standard library functions.
@@ -157,10 +158,6 @@
 #else
 #define LUA_API __declspec(dllimport)
 #endif
-
-#elif defined(LUA_BUILD_EXE_EXPORT)
-
-#define LUA_API __declspec(dllexport)
 
 #else
 
@@ -210,10 +207,7 @@
 @* of a function in debug information.
 ** CHANGE it if you want a different size.
 */
-#define LUA_IDSIZE	200
-/* Increased from default of 60 to reduce chance of '...' prefix in error
- and traceback messages.  (It's good in command-line Lua, but not so good
- in SciTE, where we want those messages to be double-clickable.) */
+#define LUA_IDSIZE	60
 
 
 /*
@@ -366,7 +360,7 @@
 /*
 @@ LUA_COMPAT_OPENLIB controls compatibility with old 'luaL_openlib'
 @* behavior.
-** CHANGE it to undefined as soon as you replace to 'luaL_registry'
+** CHANGE it to undefined as soon as you replace to 'luaL_register'
 ** your uses of 'luaL_openlib'
 */
 #define LUA_COMPAT_OPENLIB
