@@ -1338,6 +1338,8 @@ static bool InitGlobalScope(bool checkProperties, bool forceReload = false) {
 	// ...register standard libraries
 	luaL_openlibs(luaState);
 
+	lua_register(luaState, "_ALERT", cf_global_print);
+
 	// although this is mostly redundant with output:append
 	// it is still included for now
 	lua_register(luaState, "trace", cf_global_trace);
@@ -1389,10 +1391,10 @@ static bool InitGlobalScope(bool checkProperties, bool forceReload = false) {
 	lua_pushcfunction(luaState, cf_scite_open);
 	lua_setfield(luaState, -2, "Open");
 
-	// added by Mitchell
 	lua_pushcfunction(luaState, cf_scite_menu_command);
 	lua_setfield(luaState, -2, "MenuCommand");
 
+	// added by Mitchell
 	lua_pushcfunction(luaState, cf_scite_update_status_bar);
 	lua_setfield(luaState, -2, "UpdateStatusBar");
 
