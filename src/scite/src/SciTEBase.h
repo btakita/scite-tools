@@ -423,6 +423,7 @@ protected:
 	ComboMemory memReplaces;
 	ComboMemory memFiles;
 	ComboMemory memDirectory;
+	ComboMemory memInputDialog; // added by Mitchell
 	enum { maxParam = 4 };
 	SString parameterisedCommand;
 	char abbrevInsert[200];
@@ -915,6 +916,13 @@ protected:
 	void ShutDown();
 	void Perform(const char *actions);
 	void DoMenuCommand(int cmdID);
+	// added by Mitchell
+	char *BufferPath(int index);
+	void SwitchToBuffer(int index);
+	// the following are platform specific:
+	virtual char *InputDialog(const char *title, const char *label, const char *defaultText) = 0;
+	virtual char *GetClipboardContents() = 0;
+	// end added by Mitchell
 
 	// Valid CurrentWord characters
 	bool iswordcharforsel(char ch);
