@@ -1,0 +1,55 @@
+
+  SciTE "Bundles" by Mitchell
+    email: mitchell {att} caladbolg {dott} net
+
+  Copyright (c) 2006-2007 Mitchell Foral. All rights reserved.
+
+  SciTE-tools homepage: http://caladbolg.net/scite.php
+  Send email to: mitchell<att>caladbolg<dott>net
+
+  Permission to use, copy, modify, and distribute this
+  utility is granted, provided credit is given to Mitchell
+
+  Like Textmate, I have devised a simple "bundle"-like system
+  for SciTE commands, snippets, and key commands. Although this
+  structure is not strictly enforced, it is clean and intuitive.
+
+  There are two kinds of "bundles": generic and language-specific.
+  Both are just single directories full of Lua scripts and maybe
+  additional files. Typically each "bundle" has an init script
+  (named after the "bundle") that loads all of the functionality
+  that will be provided by the "bundle".
+
+  Generic "bundle"s are typically loaded in extension.lua. For
+  example, the 'scite' "bundle" (src/scite/) is loaded by default.
+  Take a look at src/scite/scite.lua and you will see that it is
+  indeed just a loader script for all the functionality provided
+  by the "bundle". It is recommended to create a table for each
+  "bundle" command set so as not to pollute the Lua global
+  environment. Snippets, Editing, and Keys are some of the tables
+  in the scite "bundle".
+
+  Language-specific "bundle"s are loaded by placing the
+    extension.[filepattern]=path/to/bundle/init/script
+  in a SciTE properties file (most probably Global or User).
+  Each language-specific "bundle" contains the init script, and
+  generally a commands.lua and snippets.lua script in addition to
+  an API file, extra documentation, etc. The commands.lua provides
+  useful functionality and langage-specific key commands for the
+  "bundle" and the snippets.lua script contains language-specific
+  snippets. It is recommended to create a table for each "bundle"
+  so as not to pollute the global Lua environment. So for example
+  in the Ruby "bundle", there is a Ruby table that contains all
+  functions, variables, etc. For examples, see the html, lua, php,
+  or ruby "bundle"s.
+
+  When assigning key commands to "bundle" functions, do not forget
+  to do so AFTER the function has been defined. You will notice
+  that in all language-specific "bundle"s, key commands are always
+  at the end of the commands.lua scripts.
+
+  Also, keep in mind when calling "bundle" functions from the
+  SciTE tools menu, call it with
+    command.[num].[filepattern]=dostring [Bundle_name].[function]
+  If your function requires parameters, you may have to supply
+  them in the command definition (even empty strings)
