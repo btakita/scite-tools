@@ -2918,6 +2918,7 @@ void SciTEGTK::CreateMenu() {
 							//{"/Options/Use _Monospaced Font", "<control>F11", menuSig, IDM_MONOFONT, "<CheckItem>"},
 							{"/Options/sep3", NULL, NULL, 0, "<Separator>"},
 							{"/Options/Open Local _Options File", NULL, menuSig, IDM_OPENLOCALPROPERTIES, 0},
+							{"/Options/Open _Directory Options File", "", menuSig, IDM_OPENDIRECTORYPROPERTIES, 0},
 							{"/Options/Open _User Options File", NULL, menuSig, IDM_OPENUSERPROPERTIES, 0},
 							{"/Options/Open _Global Options File", NULL, menuSig, IDM_OPENGLOBALPROPERTIES, 0},
 							//{"/Options/Open A_bbreviations File", NULL, menuSig, IDM_OPENABBREVPROPERTIES, 0},
