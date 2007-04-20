@@ -156,7 +156,7 @@ if type(keys) == 'table' then
     g = { Ruby.goto_required }
   }
   keys[SCLEX_RUBY]['s\n'] = { Ruby.try_to_autocomplete_end }
-  keys[SCLEX_RUBY]['.']   = { Ruby.autocomplete, '.'       }
+  -- keys[SCLEX_RUBY]['.']   = { Ruby.autocomplete, '.'       }
   keys[SCLEX_RUBY]['cs?'] = { Ruby.ri_doc                  }
   keys[SCLEX_RUBY]['s:']  = { function()
     if editor.CharAt[editor.CurrentPos - 1] == 58 then -- ::
