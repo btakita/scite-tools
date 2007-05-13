@@ -29,9 +29,9 @@ extern "C" {
 
 static lua_State *luaState = NULL;
 static WindowID windowID;
-static Accessor *accessor;
-static int startSeg;
-static int maxLength;
+static DocumentAccessor *accessor;
+static unsigned int startSeg;
+static unsigned int maxLength;
 static const char * LuaScript = "/usr/share/scite/scripts/lexers/lexer.lua";
 
 static const char * lexers[] = {
@@ -168,13 +168,13 @@ static int lua_panic(lua_State *L) {
 // sets styling up to a position
 // e.g. StyleTo(pos, style)
 static int lua_style_to(lua_State *L) {
-	int position = luaL_checkinteger(L, -2) - 1;
+	unsigned int position = luaL_checkinteger(L, -2) - 1;
 	int style = luaL_checkinteger(L, -1);
-	if (style >= 0 && style <= STYLE_MAX && position > 0) {
-		if (position - 1 < maxLength)
-			accessor->ColourTo(startSeg + position - 1, style);
+	if (style >= 0 && style <= STYLE_MAX) {
+		if (position > startSeg && position - 1 < maxLength)
+			accessor->ColourTo(position - 1, style);
 	} else {
-		lua_pushstring(L, "Bad style number or length");
+		lua_pushstring(L, "Bad style number");
 		lua_handle_error(L);
 	}
 	return 0;
@@ -345,22 +345,22 @@ static void InitDoc(Accessor &styler) {
 static void ColouriseDoc(unsigned int startPos, int length, int initStyle, WordList** /* keywordlists[] */, Accessor &styler) {
 	DocumentAccessor &da = static_cast<DocumentAccessor &>(styler);
 	windowID = da.GetWindow();
-	accessor = &styler;
+	//~ accessor = &styler;
+	accessor = &da;
 
 	startSeg = startPos;
-	maxLength = length;
-	unsigned int lengthDoc = startSeg + length;
+	maxLength = startPos + length;
 
-	// get the text to highlight
-	char *text = new char[length + 1];
-	for (unsigned int i = startPos; i < lengthDoc; i++)
-		text[i - startPos] = styler.SafeGetCharAt(i, ' ');
-	text[length] = '\0';
-	//~ TextRange tr;
-	//~ tr.chrg.cpMin = startPos;
-	//~ tr.chrg.cpMax = startPos + length;
-	//~ tr.lpstrText = text;
-	//~ Platform::SendScintillaPointer(windowID, SCI_GETTEXTRANGE, 0, &tr);
+	// get all document text for highlighting
+	char *text = new char[da.Length() + 1];
+	//~ for (unsigned int i = startPos; i < maxLength; i++)
+	//~	text[i - startPos] = styler.SafeGetCharAt(i, ' ');
+	//~ text[length] = '\0';
+	TextRange tr;
+	tr.chrg.cpMin = 0;
+	tr.chrg.cpMax = da.Length();
+	tr.lpstrText = text;
+	Platform::SendScintillaPointer(windowID, SCI_GETTEXTRANGE, 0, &tr);
 
 	accessor->StartAt(startPos);
 	accessor->StartSegment(startPos);
@@ -375,7 +375,8 @@ static void ColouriseDoc(unsigned int startPos, int length, int initStyle, WordL
 			lua_pushstring(luaState, "'RunLexer' function not found");
 			lua_handle_error(luaState);
 		}
-		accessor->ColourTo(lengthDoc - 1, initStyle);
+		accessor->ColourTo(maxLength - 1, initStyle);
+		delete []text;
 		//~ lua_close();
 	}
 }

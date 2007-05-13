@@ -349,12 +349,8 @@ int Document::MovePositionOutsideChar(int pos, int moveDir, bool checkLineEnd) {
 }
 
 void Document::ModifiedAt(int pos) {
-// modified by Mitchell
-#ifndef USELPEGLEX
 	if (endStyled > pos)
 		endStyled = pos;
-#endif
-// end modified by Mitchell
 }
 
 void Document::CheckReadOnly() {
@@ -1276,11 +1272,7 @@ void Document::SetStylingBits(int bits) {
 
 void Document::StartStyling(int position, char mask) {
 	stylingMask = mask;
-// modified by Mitchell
-#ifndef USELPEGLEX
 	endStyled = position;
-#endif
-// end modified by Mitchell
 }
 
 bool Document::SetStyleFor(int length, char style) {
@@ -1295,11 +1287,7 @@ bool Document::SetStyleFor(int length, char style) {
 			                   prevEndStyled, length);
 			NotifyModified(mh);
 		}
-// modified by Mitchell
-#ifndef USELPEGLEX
 		endStyled += length;
-#endif
-// end modified by Mitchell
 		enteredStyling--;
 		return true;
 	}
@@ -1323,11 +1311,6 @@ bool Document::SetStyles(int length, char *styles) {
 				endMod = endStyled;
 			}
 		}
-// modified by Mitchell
-#ifdef USELPEGLEX
-		endStyled = 0;
-#endif
-// end modified by Mitchell
 		if (didChange) {
 			DocModification mh(SC_MOD_CHANGESTYLE | SC_PERFORMED_USER,
 			                   startMod, endMod - startMod + 1);
