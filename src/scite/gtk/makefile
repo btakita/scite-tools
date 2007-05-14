@@ -47,6 +47,14 @@ SYSCONF_PATH=$(prefix)/share/scite
 
 INSTALL=install -o root -g root
 
+ifdef USELPEGLEX
+SCINTILLA=scintilla-st
+LUA51=1
+SYSTEMLUA=1
+else
+SCINTILLA=scintilla
+endif
+
 ifdef LUA51
 PROG	= ../bin/SciTE51
 else
@@ -55,22 +63,36 @@ endif
 
 all: $(PROG)
 
-vpath %.h ../src ../../scintilla/include
+vpath %.h ../src ../../$(SCINTILLA)/include
 vpath %.cxx ../src
 
 #CXXFLAGS= -g -DGTK -DSCI_LEXER -DSYSCONF_PATH=\"$(SYSCONF_PATH)\" -Wwrite-strings
-INCLUDEDIRS=-I ../../scintilla/include -I ../src
+INCLUDEDIRS=-I ../../$(SCINTILLA)/include -I ../src
 CXXBASEFLAGS=-W -Wall -pedantic -Os -DGTK -DSCI_LEXER -DPIXMAP_PATH=\"$(pixmapdir)\" -DSYSCONF_PATH=\"$(SYSCONF_PATH)\" $(INCLUDEDIRS)
 
-ifdef DEBUG
-CXXTFLAGS=-DDEBUG -g $(CXXBASEFLAGS)
+ifdef USELPEGLEX
+LPEGLEXFLAG=-DUSELPEGLEX
 else
-CXXTFLAGS=-DNDEBUG -Os $(CXXBASEFLAGS)
+LPEGLEXFLAG=
 endif
 
-ifndef NO_LUA
+ifdef DEBUG
+CXXTFLAGS=-DDEBUG -g $(CXXBASEFLAGS) $(LPEGLEXFLAG)
+else
+CXXTFLAGS=-DNDEBUG -Os $(CXXBASEFLAGS) $(LPEGLEXFLAG)
+endif
+
+### LUA ###
 
 ifdef LUA51
+
+ifdef SYSTEMLUA
+
+LUA_OBJS=LuaExtension51.o IFaceTable.o
+LUA_LIBS=-llua
+LUA_INCLUDES=
+
+else
 
 LUA_CORE_OBJS = lapi.o lcode.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o \
     lmem.o lobject.o lopcodes.o lparser.o lstate.o lstring.o \
@@ -78,41 +100,47 @@ LUA_CORE_OBJS = lapi.o lcode.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o \
 LUA_LIB_OBJS =  lauxlib.o lbaselib.o ldblib.o liolib.o lmathlib.o ltablib.o \
     lstrlib.o loadlib.o loslib.o linit.o lbitlib.o
 LUA_OBJS=LuaExtension51.o IFaceTable.o $(LUA_CORE_OBJS) $(LUA_LIB_OBJS)
-
-INCLUDEDIRS=-I ../../scintilla/include -I ../src -I ../lua51/include -I ../lua51/src
+LUA_LIBS=
+LUA_INCLUDES=-I ../lua51/include -I ../lua51/src
+# compiling
 $(LUA_CORE_OBJS): ../lua51/src/*.c
-	gcc $(INCLUDEDIRS) $(CXXTFLAGS) -c ../lua51/src/*.c
+	gcc $(CXXTFLAGS) $(LUA_INCLUDES) -c ../lua51/src/*.c
 $(LUA_LIB_OBJS): ../lua51/src/lib/*.c
-	gcc $(INCLUDEDIRS) $(CXXTFLAGS) -c ../lua51/src/lib/*.c
-CXXFLAGS=$(CXXTFLAGS)
+	gcc $(CXXTFLAGS) $(LUA_INCLUDES) -c ../lua51/src/lib/*.c
+
+endif
+
+else
+
+ifdef SYSTEMLUA
+
+LUA_OBJS=LuaExtension.o IFaceTable.o
+LUA_LIBS=-llua50 -llualib50
+LUA_INCLUDES=-I ../lua/include
 
 else
 
 LUA_CORE_OBJS = lapi.o lcode.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o \
-		lmem.o lobject.o lopcodes.o lparser.o lstate.o lstring.o \
-		ltable.o ltm.o lundump.o lvm.o lzio.o
-LUA_LIB_OBJS =	lauxlib.o lbaselib.o ldblib.o liolib.o lmathlib.o ltablib.o \
-		lstrlib.o loadlib.o
+    lmem.o lobject.o lopcodes.o lparser.o lstate.o lstring.o \
+    ltable.o ltm.o lundump.o lvm.o lzio.o
+LUA_LIB_OBJS =  lauxlib.o lbaselib.o ldblib.o liolib.o lmathlib.o ltablib.o \
+    lstrlib.o loadlib.o
 LUA_OBJS = LuaExtension.o IFaceTable.o $(LUA_CORE_OBJS) $(LUA_LIB_OBJS)
-
-INCLUDEDIRS=-I ../../scintilla/include -I ../src -I../lua/include
+LUA_LIBS=
+LUA_INCLUDES=-I ../lua/include
+# compiling
 $(LUA_CORE_OBJS): ../lua/src/*.c
-	gcc $(INCLUDEDIRS) $(CXXTFLAGS) -c ../lua/src/*.c
+	gcc $(CXXTFLAGS) $(LUA_INCLUDES) -c ../lua/src/*.c
 $(LUA_LIB_OBJS): ../lua/src/lib/*.c
-	gcc $(INCLUDEDIRS) $(CXXTFLAGS) -c ../lua/src/lib/*.c
-CXXFLAGS=$(CXXTFLAGS)
+	gcc $(CXXTFLAGS) $(LUA_INCLUDES) -c ../lua/src/lib/*.c
 
 endif
 
-else
-
-CXXFLAGS=$(CXXTFLAGS) -DNO_LUA
-
 endif
 
-ifeq ($(shell uname), Darwin)
-CXXFLAGS:=$(CXXFLAGS) -Dunix
-endif
+CXXFLAGS=$(CXXTFLAGS) $(LUA_INCLUDES)
+
+###
 
 .cxx.o:
 	$(CC) `$(CONFIGFLAGS)` $(CXXFLAGS) -c $< -o $@
@@ -124,12 +152,12 @@ deps:
 	$(CC) -MM `$(CONFIGFLAGS)` $(CXXFLAGS) *.cxx ../src/*.cxx >deps.mak
 
 # make should be run in ../../scintilla/gtk to compile all the lexers.
-COMPLIB=../../scintilla/bin/scintilla.a
+COMPLIB=../../$(SCINTILLA)/bin/scintilla.a
 
 $(PROG): SciTEGTK.o FilePath.o SciTEBase.o SciTEBuffers.o SciTEIO.o Exporters.o \
 MultiplexExtension.o DirectorExtension.o SciTEProps.o Utf8_16.o \
 	$(COMPLIB) $(LUA_OBJS)
-	$(CC) `$(CONFIGTHREADS)` -DGTK $^ -o $@ `$(CONFIGLIB)`
+	$(CC) `$(CONFIGTHREADS)` -DGTK $^ -o $@ `$(CONFIGLIB)` $(LUA_LIBS)
 
 # Automatically generate header dependencies with "make deps"
 include deps.mak

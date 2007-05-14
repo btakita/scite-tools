@@ -1259,8 +1259,12 @@ void SciTEBase::ReadFontProperties() {
 	// Set styles
 	// For each window set the global default style, then the language default style, then the other global styles, then the other language styles
 
+	// modified by Mitchell
+#ifndef USELPEGLEX
 	SendEditor(SCI_STYLERESETDEFAULT, 0, 0);
 	SendOutput(SCI_STYLERESETDEFAULT, 0, 0);
+#endif
+	// end modified by Mitchell
 
 	sprintf(key, "style.%s.%0d", "*", STYLE_DEFAULT);
 	sval = props.GetNewExpand(key);
@@ -1271,18 +1275,30 @@ void SciTEBase::ReadFontProperties() {
 	sval = props.GetNewExpand(key);
 	SetOneStyle(wEditor, STYLE_DEFAULT, sval.c_str());
 
+	// modified by Mitchell
+#ifndef USELPEGLEX
 	SendEditor(SCI_STYLECLEARALL, 0, 0);
+#endif
+	// end modified by Mitchell
 
 	SetStyleFor(wEditor, "*");
 	SetStyleFor(wEditor, language.c_str());
 
+	// modified by Mitchell
+#ifndef USELPEGLEX
 	SendOutput(SCI_STYLECLEARALL, 0, 0);
+#endif
+	// end modified by Mitchell
 
 	sprintf(key, "style.%s.%0d", "errorlist", STYLE_DEFAULT);
 	sval = props.GetNewExpand(key);
 	SetOneStyle(wOutput, STYLE_DEFAULT, sval.c_str());
 
+	// modified by Mitchell
+#ifndef USELPEGLEX
 	SendOutput(SCI_STYLECLEARALL, 0, 0);
+#endif
+	// end modified by Mitchell
 
 	SetStyleFor(wOutput, "*");
 	SetStyleFor(wOutput, "errorlist");

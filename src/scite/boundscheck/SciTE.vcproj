@@ -322,6 +322,9 @@
 				RelativePath="..\..\scintilla\src\LexLout.cxx">
 			</File>
 			<File
+				RelativePath="..\..\scintilla\src\LexLPeg.cxx">
+			</File>
+			<File
 				RelativePath="..\..\scintilla\src\LexLua.cxx">
 			</File>
 			<File

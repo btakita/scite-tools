@@ -53,12 +53,18 @@ else
 PROG	= ../bin/cSciTE
 endif
 
+ifdef USELPEGLEX
+SCINTILLA=scintilla-st
+else
+SCINTILLA=scintilla
+end
+
 all: $(PROG)
 
-vpath %.h ../src ../../scintilla/include
+vpath %.h ../src ../../$(SCINTILLA)/include
 vpath %.cxx ../src
 
-BASE_INCLUDES=-I ../../scintilla/include -I ../src
+BASE_INCLUDES=-I ../../$(SCINTILLA)/include -I ../src
 CXXBASEFLAGS=-W -Wall -pedantic -Os -DGTK -DSCI_LEXER -DPIXMAP_PATH=\"$(pixmapdir)\" -DSYSCONF_PATH=\"$(SYSCONF_PATH)\" $(BASE_INCLUDES)
 
 ifdef DEBUG
@@ -140,7 +146,7 @@ deps:
 	$(CC) -MM `$(CONFIGFLAGS)` $(CXXFLAGS) *.cxx ../src/*.cxx >deps.mak
 
 # make should be run in ../../scintilla/gtk to compile all the lexers.
-COMPLIB=../../scintilla/bin/scintilla.a
+COMPLIB=../../$(SCINTILLA)/bin/scintilla.a
 
 $(PROG): cSciTEGTK.o FilePath.o SciTEBase.o SciTEBuffers.o SciTEIO.o Exporters.o \
 MultiplexExtension.o DirectorExtension.o SciTEProps.o Utf8_16.o \

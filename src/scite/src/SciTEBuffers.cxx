@@ -1281,6 +1281,8 @@ inline bool isdigitchar(int ch) {
 int DecodeMessage(const char *cdoc, char *sourcePath, int format, int &column) {
 	sourcePath[0] = '\0';
 	column = -1; // default to not detected
+	// modified by Mitchell
+#ifndef USELPEGLEX
 	switch (format) {
 	case SCE_ERR_PYTHON: {
 			// Python
@@ -1604,6 +1606,8 @@ int DecodeMessage(const char *cdoc, char *sourcePath, int format, int &column) {
 			break;
 		}
 	}	// switch
+#endif
+	// end modified by Mitchell
 	return -1;
 }
 
@@ -1625,11 +1629,15 @@ void SciTEBase::GoMessage(int dir) {
 		int lineLength = SendOutput(SCI_LINELENGTH, lookLine, 0);
 		//Platform::DebugPrintf("GOMessage %d %d %d of %d linestart = %d\n", selStart, curLine, lookLine, maxLine, startPosLine);
 		char style = acc.StyleAt(startPosLine);
+		// modified by Mitchell
+#ifndef USELPEGLEX
 		if (style != SCE_ERR_DEFAULT &&
 		        style != SCE_ERR_CMD &&
 		        style != SCE_ERR_DIFF_ADDITION &&
 		        style != SCE_ERR_DIFF_CHANGED &&
 		        style != SCE_ERR_DIFF_DELETION) {
+#endif
+		// end modified by Mitchell
 			//Platform::DebugPrintf("Marker to %d\n", lookLine);
 			SendOutput(SCI_MARKERDELETEALL, static_cast<uptr_t>(-1));
 			SendOutput(SCI_MARKERDEFINE, 0, SC_MARK_SMALLRECT);
@@ -1673,6 +1681,8 @@ void SciTEBase::GoMessage(int dir) {
 					}
 				}
 
+				// modified by Mitchell
+#ifndef USELPEGLEX
 				// If ctag then get line number after search tag or use ctag line number
 				if (style == SCE_ERR_CTAG) {
 					char cTag[200];
@@ -1691,6 +1701,8 @@ void SciTEBase::GoMessage(int dir) {
 						}
 					}
 				}
+#endif
+				// end modifed by Mitchell
 
 				SendEditor(SCI_MARKERDELETEALL, 0);
 				SendEditor(SCI_MARKERDEFINE, 0, SC_MARK_CIRCLE);
@@ -1720,7 +1732,11 @@ void SciTEBase::GoMessage(int dir) {
 				WindowSetFocus(wEditor);
 			}
 			return;
+		// modified by Mitchell
+#ifndef USELPEGLEX
 		}
+#endif
+		// end modified by Mitchell
 		lookLine += dir;
 		if (lookLine < 0)
 			lookLine = maxLine - 1;
