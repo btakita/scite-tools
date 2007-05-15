@@ -51,6 +51,10 @@ protected:
 	void SetLexer(uptr_t wParam);
 	void SetLexerLanguage(const char *languageName);
 	void Colourise(int start, int end);
+	// added by Mitchell
+#ifdef USELPEGLEX
+	lua_State *luaState;
+#endif
 #endif
 
 	ScintillaBase();

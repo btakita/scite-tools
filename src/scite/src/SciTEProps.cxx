@@ -788,7 +788,13 @@ void SciTEBase::ReadProperties() {
 
 	SendEditor(SCI_SETSTYLEBITS, SendEditor(SCI_GETSTYLEBITSNEEDED));
 
-	SendOutput(SCI_SETLEXER, SCLEX_ERRORLIST);
+// modified by Mitchell
+#ifndef USELPEGLEX
+	SendOutput(SCI_SETLEXERLANGUAGE, SCLEX_ERRORLIST);
+#else
+	SendOutputString(SCI_SETLEXERLANGUAGE, 0, "errorlist");
+#endif
+// end modified by Mitchell
 
 	SString kw0 = props.GetNewExpand("keywords.", fileNameForExtension.c_str());
 	SendEditorString(SCI_SETKEYWORDS, 0, kw0.c_str());

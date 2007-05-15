@@ -5,11 +5,24 @@
 // Copyright 1998-2001 by Neil Hodgson <neilh@scintilla.org>
 // The License.txt file describes the conditions under which this software may be distributed.
 
+// added by Mitchell
+extern "C" {
+#include <lua.h>
+#include <lualib.h>
+#include <lauxlib.h>
+}
+// end added by Mitchell
+
 typedef void (*LexerFunction)(unsigned int startPos, int lengthDoc, int initStyle,
+                  // added by Mitchell
+#ifdef USELPEGLEX
+                  lua_State *L,
+#endif
+                  // end added by Mitchell
                   WordList *keywordlists[], Accessor &styler);
 // added by Mitchell
 #ifdef USELPEGLEX
-typedef void (*InitFunction)(Accessor &styler);
+typedef void (*InitFunction)(lua_State *L, const char *languageName, Accessor &styler);
 #endif
 // end added by Mitchell
 
@@ -60,12 +73,22 @@ public:
 
 	// added by Mitchell
 #ifdef USELPEGLEX
-	virtual void Init(Accessor &styler) const;
+	virtual void Init(lua_State *L, const char *languageName, Accessor &styler) const;
 #endif
 	// end added by Mitchell
 	virtual void Lex(unsigned int startPos, int lengthDoc, int initStyle,
+                  // added by Mitchell
+#ifdef USELPEGLEX
+                  lua_State *L,
+#endif
+                  // end added by Mitchell
                   WordList *keywordlists[], Accessor &styler) const;
 	virtual void Fold(unsigned int startPos, int lengthDoc, int initStyle,
+                  // added by Mitchell
+#ifdef USELPEGLEX
+                  lua_State *L,
+#endif
+                  // end added by Mitchell
                   WordList *keywordlists[], Accessor &styler) const;
 	static const LexerModule *Find(int language);
 	static const LexerModule *Find(const char *languageName);

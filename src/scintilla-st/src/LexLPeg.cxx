@@ -27,116 +27,11 @@ extern "C" {
 
 #define eq(s1, s2) (strcasecmp((s1), (s2)) == 0)
 
-static lua_State *luaState = NULL;
 static WindowID windowID;
 static DocumentAccessor *accessor;
 static unsigned int startSeg;
 static unsigned int maxLength;
 static const char * LuaScript = "/usr/share/scite/scripts/lexers/lexer.lua";
-
-static const char * lexers[] = {
-	"container",
-	"null",
-	"python",
-	"cpp",
-	"html",
-	"xml",
-	"perl",
-	"sql",
-	"vb",
-	"props",
-	"errorlist", // 10
-	"makefile",
-	"batch",
-	"xcode",
-	"latex",
-	"lua",
-	"diff",
-	"conf",
-	"pascal",
-	"ave",
-	"ada", // 20
-	"lisp",
-	"ruby",
-	"eiffel",
-	"eiffelkw",
-	"tcl",
-	"nncrontab",
-	"bullant",
-	"vbscript",
-	"asp",
-	"php", // 30
-	"baan",
-	"matlab",
-	"scriptol",
-	"asm",
-	"cppnocase",
-	"fortran",
-	"f77",
-	"css",
-	"pov",
-	"lout", // 40
-	"escript",
-	"ps",
-	"nsis",
-	"mmixal",
-	"clarion",
-	"clarionnocase",
-	"lot",
-	"yaml",
-	"tex",
-	"metapost", // 50
-	"powerbasic",
-	"forth",
-	"erlang",
-	"octave",
-	"mssql",
-	"verilog",
-	"kix",
-	"gui4cli",
-	"specman",
-	"au3", // 60
-	"apdl",
-	"bash",
-	"asn1",
-	"vhdl",
-	"caml",
-	"blitzbasic",
-	"purebasic",
-	"haskell",
-	"phpscript",
-	"tads3", // 70
-	"rebol",
-	"smalltalk",
-	"flagship",
-	"csound",
-	"freebasic",
-	"innosetup",
-	"opal",
-	"spice",
-	"d",
-	"cmake", // 80
-	"",
-	"",
-	"",
-	"",
-	"",
-	"",
-	"",
-	"",
-	"",
-	"", // 90
-	"",
-	"",
-	"",
-	"",
-	"",
-	"",
-	"",
-	"",
-	"llpeg", // 99
-	0
-};
 
 //~ static int lua_send_scintilla(lua_State *L) {
 	//~ unsigned int msg = static_cast<unsigned int>(luaL_checkinteger(L, -3));
@@ -159,9 +54,8 @@ static int lua_handle_error(lua_State *L) {
 // if something goes horribly wrong...
 static int lua_panic(lua_State *L) {
 	lua_handle_error(L);
-	if (L == luaState)
-		lua_close(L);
-	luaState = NULL;
+	lua_close(L);
+	L = NULL;
 	return 0;
 }
 
@@ -200,7 +94,7 @@ static int lua_get_property(lua_State *L) {
 	return 1;
 }
 
-bool LoadLexerScript(lua_State *L) {
+bool LoadLexerScript(lua_State *L, const char *languageName) {
 	// read script
 	if (luaL_loadfile(L, LuaScript) == 0) {
 		if (lua_pcall(L, 0, 0, 1) != 0)
@@ -213,8 +107,7 @@ bool LoadLexerScript(lua_State *L) {
 	// load the lexer and style properties
 	lua_getglobal(L, "InitLexer");
 	if (lua_isfunction(L, -1)) {
-		int lexerNum = Platform::SendScintilla(windowID, SCI_GETLEXER);
-		lua_pushstring(L, lexers[lexerNum]);
+		lua_pushstring(L, languageName);
 		if (lua_pcall(L, 1, 0, 1) != 0)
 			return false;
 	} else {
@@ -296,53 +189,44 @@ bool SetupStyling(lua_State *L) {
 	return true;
 }
 
-// initializes Lua if it hasn't been already, reads
-// lexer script, and loads lexing style properties
-bool InitLua() {
-	if (!luaState) {
-		luaState = lua_open();
-		if (!luaState) {
-			Platform::DebugPrintf("Lua failed to initialize\n");
-			return false;
-		}
-		lua_atpanic(luaState, lua_panic);
-
-		// load table and string libraries
-		lua_pushcfunction(luaState, luaopen_base);
-		lua_pushstring(luaState, "");
-		lua_call(luaState, 1, 0);
-		lua_pushcfunction(luaState, luaopen_table);
-		lua_pushstring(luaState, LUA_TABLIBNAME);
-		lua_call(luaState, 1, 0);
-		lua_pushcfunction(luaState, luaopen_string);
-		lua_pushstring(luaState, LUA_STRLIBNAME);
-		lua_call(luaState, 1, 0);
-		lua_pushcfunction(luaState, luaopen_package);
-		lua_pushstring(luaState, LUA_LOADLIBNAME);
-		lua_call(luaState, 1, 0);
+// argument is opened Lua State (from ScintillaBase.cxx)
+// (re)initializes Lua, reads lexer script,
+// and loads lexxing style properties
+bool InitLua(lua_State *L) {
+	if (!L) {
+		Platform::DebugPrintf("Lua failed to initialize\n");
+		return false;
 	}
-	lua_settop(luaState, 0);
-	lua_pushcfunction(luaState, lua_handle_error); // main error handling function
+	lua_atpanic(L, lua_panic);
 
-	return LoadLexerScript(luaState);
+	// load table and string libraries
+	lua_pushcfunction(L, luaopen_base);
+	lua_pushstring(L, "");
+	lua_call(L, 1, 0);
+	lua_pushcfunction(L, luaopen_table);
+	lua_pushstring(L, LUA_TABLIBNAME);
+	lua_call(L, 1, 0);
+	lua_pushcfunction(L, luaopen_string);
+	lua_pushstring(L, LUA_STRLIBNAME);
+	lua_call(L, 1, 0);
+	lua_pushcfunction(L, luaopen_package);
+	lua_pushstring(L, LUA_LOADLIBNAME);
+	lua_call(L, 1, 0);
+	lua_settop(L, 0);
+	lua_pushcfunction(L, lua_handle_error); // main error handling function
+
+	return true;
 }
 
-//~ void lua_close() {
-	//~ if (luaState != NULL)
-		//~ lua_close(luaState);
-	//~ luaState = NULL;
-//~ }
-
-static void InitDoc(Accessor &styler) {
+static void InitDoc(lua_State *L, const char *languageName, Accessor &styler) {
 	DocumentAccessor &da = static_cast<DocumentAccessor &>(styler);
 	windowID = da.GetWindow();
-	if (InitLua())
-		SetupStyling(luaState);
-	//~ InitLua();
+	if (InitLua(L) && LoadLexerScript(L, languageName))
+		SetupStyling(L);
 	return;
 }
 
-static void ColouriseDoc(unsigned int startPos, int length, int initStyle, WordList** /* keywordlists[] */, Accessor &styler) {
+static void ColouriseDoc(unsigned int startPos, int length, int initStyle, lua_State *L, WordList** /* keywordlists[] */, Accessor &styler) {
 	DocumentAccessor &da = static_cast<DocumentAccessor &>(styler);
 	windowID = da.GetWindow();
 	//~ accessor = &styler;
@@ -366,22 +250,21 @@ static void ColouriseDoc(unsigned int startPos, int length, int initStyle, WordL
 	accessor->StartSegment(startPos);
 
 	// load lua and initiate the lexxing
-	if (luaState && LoadLexerScript(luaState)) {
-		lua_getglobal(luaState, "RunLexer");
-		if (lua_isfunction(luaState, -1)) {
-			lua_pushstring(luaState, text);
-			lua_pcall(luaState, 1, 0, 1);
+	if (L) {
+		lua_getglobal(L, "RunLexer");
+		if (lua_isfunction(L, -1)) {
+			lua_pushstring(L, text);
+			lua_pcall(L, 1, 0, 1);
 		} else {
-			lua_pushstring(luaState, "'RunLexer' function not found");
-			lua_handle_error(luaState);
+			lua_pushstring(L, "'RunLexer' function not found");
+			lua_handle_error(L);
 		}
 		accessor->ColourTo(maxLength - 1, initStyle);
 		delete []text;
-		//~ lua_close();
 	}
 }
 
-static void FoldLPeg(unsigned int startPos, int length, int /* initStyle */, WordList *[], Accessor &styler) {
+static void FoldLPeg(unsigned int startPos, int length, int /* initStyle */, lua_State *L, WordList *[], Accessor &styler) {
 
 }
 
@@ -391,83 +274,5 @@ static const char * const wordListDesc[] = { 0 };
 LexerModule lmLPeg(SCLEX_LPEG, ColouriseDoc, "llpeg", FoldLPeg, wordListDesc, 7);
 #else
 LexerModule lmLPeg(SCLEX_LPEG, InitDoc, ColouriseDoc, "llpeg", FoldLPeg, wordListDesc, 7);
-LexerModule lmAPDL(SCLEX_APDL, InitDoc, ColouriseDoc, "apdl", FoldLPeg, wordListDesc, 7);
-LexerModule lmAU3(SCLEX_AU3, InitDoc, ColouriseDoc, "au3", FoldLPeg, wordListDesc, 7);
-LexerModule lmAVE(SCLEX_AVE, InitDoc, ColouriseDoc, "ave", FoldLPeg, wordListDesc, 7);
-LexerModule lmAda(SCLEX_ADA, InitDoc, ColouriseDoc, "ada", FoldLPeg, wordListDesc, 7);
-LexerModule lmAsm(SCLEX_ASM, InitDoc, ColouriseDoc, "asm", FoldLPeg, wordListDesc, 7);
-LexerModule lmAns1(SCLEX_ASN1, InitDoc, ColouriseDoc, "asn1", FoldLPeg, wordListDesc, 7);
-LexerModule lmBaan(SCLEX_BAAN, InitDoc, ColouriseDoc, "baan", FoldLPeg, wordListDesc, 7);
-LexerModule lmBash(SCLEX_BASH, InitDoc, ColouriseDoc, "bash", FoldLPeg, wordListDesc, 7);
-LexerModule lmBlitzBasic(SCLEX_BLITZBASIC, InitDoc, ColouriseDoc, "blitzbasic", FoldLPeg, wordListDesc, 7);
-LexerModule lmPureBasic(SCLEX_PUREBASIC, InitDoc, ColouriseDoc, "purebasic", FoldLPeg, wordListDesc, 7);
-LexerModule lmFreeBasic(SCLEX_FREEBASIC, InitDoc, ColouriseDoc, "freebasic", FoldLPeg, wordListDesc, 7);
-LexerModule lmBullant(SCLEX_BULLANT, InitDoc, ColouriseDoc, "bullant", FoldLPeg, wordListDesc, 7);
-LexerModule lmClw(SCLEX_CLW, InitDoc, ColouriseDoc, "clarion", FoldLPeg, wordListDesc, 7);
-LexerModule lmClwNoCase(SCLEX_CLWNOCASE, InitDoc, ColouriseDoc, "clarionnocase", FoldLPeg, wordListDesc, 7);
-LexerModule lmCPP(SCLEX_CPP, InitDoc, ColouriseDoc, "cpp", FoldLPeg, wordListDesc, 7);
-LexerModule lmCPPNoCase(SCLEX_CPPNOCASE, InitDoc, ColouriseDoc, "cppnocase", FoldLPeg, wordListDesc, 7);
-LexerModule lmCss(SCLEX_CSS, InitDoc, ColouriseDoc, "css", FoldLPeg, wordListDesc, 7);
-LexerModule lmCaml(SCLEX_CAML, InitDoc, ColouriseDoc, "caml", FoldLPeg, wordListDesc, 7);
-LexerModule lmCmake(SCLEX_CMAKE, InitDoc, ColouriseDoc, "cmake", FoldLPeg, wordListDesc, 7);
-LexerModule lmConf(SCLEX_CONF, InitDoc, ColouriseDoc, "conf", FoldLPeg, wordListDesc, 7);
-LexerModule lmNncrontab(SCLEX_NNCRONTAB, InitDoc, ColouriseDoc, "nncrontab", FoldLPeg, wordListDesc, 7);
-LexerModule lmCsound(SCLEX_CSOUND, InitDoc, ColouriseDoc, "csound", FoldLPeg, wordListDesc, 7);
-LexerModule lmD(SCLEX_D, InitDoc, ColouriseDoc, "d", FoldLPeg, wordListDesc, 7);
-LexerModule lmESCRIPT(SCLEX_ESCRIPT, InitDoc, ColouriseDoc, "escript", FoldLPeg, wordListDesc, 7);
-LexerModule lmEiffel(SCLEX_EIFFEL, InitDoc, ColouriseDoc, "eiffel", FoldLPeg, wordListDesc, 7);
-LexerModule lmEiffelkw(SCLEX_EIFFELKW, InitDoc, ColouriseDoc, "eiffelkw", FoldLPeg, wordListDesc, 7);
-LexerModule lmErlang(SCLEX_ERLANG, InitDoc, ColouriseDoc, "erlang", FoldLPeg, wordListDesc, 7);
-LexerModule lmFlagShip(SCLEX_FLAGSHIP, InitDoc, ColouriseDoc, "flagship", FoldLPeg, wordListDesc, 7);
-LexerModule lmForth(SCLEX_FORTH, InitDoc, ColouriseDoc, "forth",FoldLPeg,wordListDesc, 7);
-LexerModule lmFortran(SCLEX_FORTRAN, InitDoc, ColouriseDoc, "fortran", FoldLPeg, wordListDesc, 7);
-LexerModule lmF77(SCLEX_F77, InitDoc, ColouriseDoc, "f77", FoldLPeg, wordListDesc, 7);
-LexerModule lmGui4Cli(SCLEX_GUI4CLI, InitDoc, ColouriseDoc, "gui4cli", FoldLPeg, wordListDesc, 7);
-LexerModule lmHTML(SCLEX_HTML, InitDoc, ColouriseDoc, "html", FoldLPeg, wordListDesc, 7);
-LexerModule lmXML(SCLEX_XML, InitDoc, ColouriseDoc, "xml", FoldLPeg, wordListDesc, 7);
-LexerModule lmASP(SCLEX_ASP, InitDoc, ColouriseDoc, "asp", FoldLPeg, wordListDesc, 7);
-LexerModule lmPHP(SCLEX_PHP, InitDoc, ColouriseDoc, "php", FoldLPeg, wordListDesc, 7);
-LexerModule lmPHPSCRIPT(SCLEX_PHPSCRIPT, InitDoc, ColouriseDoc, "phpscript", FoldLPeg, wordListDesc, 7);
-LexerModule lmHaskell(SCLEX_HASKELL, InitDoc, ColouriseDoc, "haskell");
-LexerModule lmInno(SCLEX_INNOSETUP, InitDoc, ColouriseDoc, "inno", FoldLPeg, wordListDesc, 7);
-LexerModule lmKix(SCLEX_KIX, InitDoc, ColouriseDoc, "kix");
-LexerModule lmLISP(SCLEX_LISP, InitDoc, ColouriseDoc, "lisp", FoldLPeg, wordListDesc, 7);
-LexerModule lmLout(SCLEX_LOUT, InitDoc, ColouriseDoc, "lout", FoldLPeg, wordListDesc, 7);
-LexerModule lmLua(SCLEX_LUA, InitDoc, ColouriseDoc, "lua", FoldLPeg, wordListDesc, 7);
-LexerModule lmMMIXAL(SCLEX_MMIXAL, InitDoc, ColouriseDoc, "mmixal", FoldLPeg, wordListDesc, 7);
-LexerModule lmLot(SCLEX_LOT, InitDoc, ColouriseDoc, "lot", FoldLPeg, wordListDesc, 7);
-LexerModule lmMSSQL(SCLEX_MSSQL, InitDoc, ColouriseDoc, "mssql", FoldLPeg, wordListDesc, 7);
-LexerModule lmMatlab(SCLEX_MATLAB, InitDoc, ColouriseDoc, "matlab", FoldLPeg, wordListDesc, 7);
-LexerModule lmOctave(SCLEX_OCTAVE, InitDoc, ColouriseDoc, "octave", FoldLPeg, wordListDesc, 7);
-LexerModule lmMETAPOST(SCLEX_METAPOST, InitDoc, ColouriseDoc, "metapost", FoldLPeg, wordListDesc, 7);
-LexerModule lmNsis(SCLEX_NSIS, InitDoc, ColouriseDoc, "nsis", FoldLPeg, wordListDesc, 7);
-LexerModule lmOpal(SCLEX_OPAL, InitDoc, ColouriseDoc, "opal", FoldLPeg, wordListDesc, 7);
-LexerModule lmBatch(SCLEX_BATCH, InitDoc, ColouriseDoc, "batch", FoldLPeg, wordListDesc, 7);
-LexerModule lmDiff(SCLEX_DIFF, InitDoc, ColouriseDoc, "diff", FoldLPeg, wordListDesc, 7);
-LexerModule lmProps(SCLEX_PROPERTIES, InitDoc, ColouriseDoc, "props", FoldLPeg, wordListDesc, 7);
-LexerModule lmMake(SCLEX_MAKEFILE, InitDoc, ColouriseDoc, "makefile", FoldLPeg, wordListDesc, 7);
-LexerModule lmErrorList(SCLEX_ERRORLIST, InitDoc, ColouriseDoc, "errorlist", FoldLPeg, wordListDesc, 7);
-LexerModule lmLatex(SCLEX_LATEX, InitDoc, ColouriseDoc, "latex", FoldLPeg, wordListDesc, 7);
 LexerModule lmNull(SCLEX_NULL, InitDoc, ColouriseDoc, "null");
-LexerModule lmPB(SCLEX_POWERBASIC, InitDoc, ColouriseDoc, "powerbasic", FoldLPeg, wordListDesc, 7);
-LexerModule lmPOV(SCLEX_POV, InitDoc, ColouriseDoc, "pov", FoldLPeg, wordListDesc, 7);
-LexerModule lmPS(SCLEX_PS, InitDoc, ColouriseDoc, "ps", FoldLPeg, wordListDesc, 7);
-LexerModule lmPascal(SCLEX_PASCAL, InitDoc, ColouriseDoc, "pascal", FoldLPeg, wordListDesc, 7);
-LexerModule lmPerl(SCLEX_PERL, InitDoc, ColouriseDoc, "perl", FoldLPeg, wordListDesc, 7);
-LexerModule lmPython(SCLEX_PYTHON, InitDoc, ColouriseDoc, "python", FoldLPeg, wordListDesc, 7);
-LexerModule lmREBOL(SCLEX_REBOL, InitDoc, ColouriseDoc, "rebol", FoldLPeg, wordListDesc, 7);
-LexerModule lmRuby(SCLEX_RUBY, InitDoc, ColouriseDoc, "ruby", FoldLPeg, wordListDesc, 7);
-LexerModule lmSQL(SCLEX_SQL, InitDoc, ColouriseDoc, "sql", FoldLPeg, wordListDesc, 7);
-LexerModule lmScriptol(SCLEX_SCRIPTOL, InitDoc, ColouriseDoc, "scriptol", FoldLPeg, wordListDesc, 7);
-LexerModule lmSmalltalk(SCLEX_SMALLTALK, InitDoc, ColouriseDoc, "smalltalk", FoldLPeg, wordListDesc, 7);
-LexerModule lmSpecman(SCLEX_SPECMAN, InitDoc, ColouriseDoc, "specman", FoldLPeg, wordListDesc, 7);
-LexerModule lmSpice(SCLEX_SPICE, InitDoc, ColouriseDoc, "spice", FoldLPeg, wordListDesc, 7);
-LexerModule lmTADS3(SCLEX_TADS3, InitDoc, ColouriseDoc, "tads3", FoldLPeg, wordListDesc, 7);
-LexerModule lmTCL(SCLEX_TCL, InitDoc, ColouriseDoc, "tcl", FoldLPeg, wordListDesc, 7);
-LexerModule lmTeX(SCLEX_TEX, InitDoc, ColouriseDoc, "tex", FoldLPeg, wordListDesc, 7);
-LexerModule lmVB(SCLEX_VB, InitDoc, ColouriseDoc, "vb", FoldLPeg, wordListDesc, 7);
-LexerModule lmVBScript(SCLEX_VBSCRIPT, InitDoc, ColouriseDoc, "vbscript", FoldLPeg, wordListDesc, 7);
-LexerModule lmVHDL(SCLEX_VHDL, InitDoc, ColouriseDoc, "vhdl", FoldLPeg, wordListDesc, 7);
-LexerModule lmVerilog(SCLEX_VERILOG, InitDoc, ColouriseDoc, "verilog", FoldLPeg, wordListDesc, 7);
-LexerModule lmYAML(SCLEX_YAML, InitDoc, ColouriseDoc, "yaml", FoldLPeg, wordListDesc, 7);
 #endif

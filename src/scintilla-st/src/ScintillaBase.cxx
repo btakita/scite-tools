@@ -20,6 +20,15 @@
 #include "DocumentAccessor.h"
 #include "KeyWords.h"
 #endif
+// added by Mitchell
+#ifdef USELPEGLEX
+extern "C" {
+#include <lua.h>
+#include <lualib.h>
+#include <lauxlib.h>
+}
+#endif
+// end added by Mitchell
 #include "ContractionState.h"
 #include "SVector.h"
 #include "SplitVector.h"
@@ -49,6 +58,11 @@ ScintillaBase::ScintillaBase() {
 	for (int wl = 0;wl < numWordLists;wl++)
 		keyWordLists[wl] = new WordList;
 	keyWordLists[numWordLists] = 0;
+	// added by Mitchell
+#ifdef USELPEGLEX
+  luaState = NULL;
+#endif
+	// end added by Mitchell
 #endif
 }
 
@@ -56,6 +70,11 @@ ScintillaBase::~ScintillaBase() {
 #ifdef SCI_LEXER
 	for (int wl = 0;wl < numWordLists;wl++)
 		delete keyWordLists[wl];
+	// added by Mitchell
+#ifdef USELPEGLEX
+  if (luaState) lua_close(luaState);
+#endif
+	// end added by Mitchell
 #endif
 }
 
@@ -442,25 +461,31 @@ void ScintillaBase::SetLexer(uptr_t wParam) {
 		lexCurrent = LexerModule::Find(SCLEX_NULL);
 	// added by Mitchell
 #ifdef USELPEGLEX
+	const char *languageName = lexLanguage == SCLEX_CONTAINER ? "container" : "null";
 	DocumentAccessor styler(pdoc, props, wMain.GetID());
-	lexCurrent->Init(styler);
+	lexCurrent->Init(luaState, languageName, styler);
 #endif
 	// end added by Mitchell
 }
 
 void ScintillaBase::SetLexerLanguage(const char *languageName) {
+	// modified by Mitchell
+#ifndef USELPEGLEX
 	lexLanguage = SCLEX_CONTAINER;
 	lexCurrent = LexerModule::Find(languageName);
 	if (!lexCurrent)
 		lexCurrent = LexerModule::Find(SCLEX_NULL);
 	if (lexCurrent)
 		lexLanguage = lexCurrent->GetLanguage();
-	// added by Mitchell
-#ifdef USELPEGLEX
+#else
+	lexCurrent = LexerModule::Find(SCLEX_LPEG);
+	lexLanguage = lexCurrent->GetLanguage();
 	DocumentAccessor styler(pdoc, props, wMain.GetID());
-	lexCurrent->Init(styler);
+	if (luaState) lua_close(luaState);
+	luaState = lua_open();
+	lexCurrent->Init(luaState, languageName, styler);
 #endif
-	// end added by Mitchell
+	// end modified by Mitchell
 }
 
 void ScintillaBase::Colourise(int start, int end) {
@@ -487,10 +512,22 @@ void ScintillaBase::Colourise(int start, int end) {
 		styler.SetCodePage(pdoc->dbcsCodePage);
 
 		if (lexCurrent && (len > 0)) {	// Should always succeed as null lexer should always be available
+			// modified by Mitchell
+#ifndef USELPEGLEX
 			lexCurrent->Lex(start, len, styleStart, keyWordLists, styler);
+#else
+			lexCurrent->Lex(start, len, styleStart, luaState, keyWordLists, styler);
+#endif
+			// end modified by Mitchell
 			styler.Flush();
 			if (styler.GetPropertyInt("fold")) {
+				// modified by Mitchell
+#ifndef USELPEGLEX
 				lexCurrent->Fold(start, len, styleStart, keyWordLists, styler);
+#else
+				lexCurrent->Fold(start, len, styleStart, luaState, keyWordLists, styler);
+#endif
+				// end modified by Mitchell
 				styler.Flush();
 			}
 		}

@@ -301,8 +301,8 @@ static void HackColour(int &n) {
 SciTEBase::SciTEBase(Extension *ext) : apis(true), extender(ext) {
 	codePage = 0;
 	characterSet = 0;
-	language = "java";
-	lexLanguage = SCLEX_CPP;
+	language = "container"; // modified by Mitchell
+	lexLanguage = SCLEX_CONTAINER; // modified by Mitchell
 	functionDefinition = 0;
 	indentOpening = true;
 	indentClosing = true;
@@ -3154,11 +3154,17 @@ bool SciTEBase::HandleXml(char ch) {
 		return false;
 	}
 
+	// modified by Mitchell
+#ifndef USELPEGLEX
 	// This may make sense only in certain languages
 	if (lexLanguage != SCLEX_HTML && lexLanguage != SCLEX_XML &&
 	        lexLanguage != SCLEX_ASP && lexLanguage != SCLEX_PHP) {
 		return false;
 	}
+#else
+	return false; // don't bother with completion
+#endif
+	// end modified by Mitchell
 
 	// If the user has turned us off, quit now.
 	// Default is off
