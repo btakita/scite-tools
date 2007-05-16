@@ -767,6 +767,25 @@ sptr_t ScintillaBase::WndProc(unsigned int iMessage, uptr_t wParam, sptr_t lPara
 		SetLexerLanguage(reinterpret_cast<const char *>(lParam));
 		break;
 
+	// added by Mitchell
+	case SCI_GETLEXERLANGUAGE: {
+			if (lParam != 0) {
+				char *ptr = reinterpret_cast<char *>(lParam);
+				const char *val;
+				if (luaState) {
+					lua_getfield(luaState, LUA_REGISTRYINDEX, "languageName");
+					val = lua_tostring(luaState, -1); lua_pop(luaState, 1);
+				} else {
+					val = lexLanguage == SCLEX_CONTAINER ? "container" : "null";
+				}
+				size_t n = strlen(val);
+				memcpy(ptr, val, n);
+				ptr[n] = '\0'; // terminate
+				return n;
+			}
+		}
+	// end added by Mitchell
+
 	case SCI_GETSTYLEBITSNEEDED:
 		return lexCurrent ? lexCurrent->GetStyleBitsNeeded() : 5;
 #endif

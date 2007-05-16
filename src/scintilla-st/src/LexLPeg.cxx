@@ -104,6 +104,9 @@ bool LoadLexerScript(lua_State *L, const char *languageName) {
 		return false;
 	}
 
+	lua_pushstring(L, languageName);
+	lua_setfield(L, LUA_REGISTRYINDEX, "languageName");
+
 	// load the lexer and style properties
 	lua_getglobal(L, "InitLexer");
 	if (lua_isfunction(L, -1)) {

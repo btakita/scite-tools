@@ -1753,6 +1753,11 @@ set void SetKeyWords=4005(int keywordSet, string keyWords)
 # Set the lexing language of the document based on string name.
 set void SetLexerLanguage=4006(, string language)
 
+# added by Mitchell
+# Retrieve the lexing language string name of the document.
+get int GetLexerLanguage=4012(, stringresult language)
+# end added by Mitchell
+
 # Load a lexer library (dll / so).
 fun void LoadLexerLibrary=4007(, string path)
 
