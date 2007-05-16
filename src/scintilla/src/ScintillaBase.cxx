@@ -718,6 +718,17 @@ sptr_t ScintillaBase::WndProc(unsigned int iMessage, uptr_t wParam, sptr_t lPara
 		SetLexerLanguage(reinterpret_cast<const char *>(lParam));
 		break;
 
+	case SCI_GETLEXERLANGUAGE: {
+			const char *val = lexCurrent->languageName;
+			const int n = strlen(val);
+			if (lParam != 0) {
+				char *ptr = reinterpret_cast<char *>(lParam);
+				memcpy(ptr, val, n);
+				ptr[n] = '\0'; // terminate
+			}
+			return n;
+		}
+
 	case SCI_GETSTYLEBITSNEEDED:
 		return lexCurrent ? lexCurrent->GetStyleBitsNeeded() : 5;
 #endif
