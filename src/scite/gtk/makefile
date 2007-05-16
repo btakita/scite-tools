@@ -47,14 +47,6 @@ SYSCONF_PATH=$(prefix)/share/scite
 
 INSTALL=install -o root -g root
 
-ifdef USELPEGLEX
-SCINTILLA=scintilla-st
-LUA51=1
-SYSTEMLUA=1
-else
-SCINTILLA=scintilla
-endif
-
 ifdef LUA51
 PROG	= ../bin/SciTE51
 else
@@ -63,23 +55,17 @@ endif
 
 all: $(PROG)
 
-vpath %.h ../src ../../$(SCINTILLA)/include
+vpath %.h ../src ../../scintilla/include
 vpath %.cxx ../src
 
 #CXXFLAGS= -g -DGTK -DSCI_LEXER -DSYSCONF_PATH=\"$(SYSCONF_PATH)\" -Wwrite-strings
-INCLUDEDIRS=-I ../../$(SCINTILLA)/include -I ../src
+INCLUDEDIRS=-I ../../scintilla/include -I ../src
 CXXBASEFLAGS=-W -Wall -pedantic -Os -DGTK -DSCI_LEXER -DPIXMAP_PATH=\"$(pixmapdir)\" -DSYSCONF_PATH=\"$(SYSCONF_PATH)\" $(INCLUDEDIRS)
 
-ifdef USELPEGLEX
-LPEGLEXFLAG=-DUSELPEGLEX
-else
-LPEGLEXFLAG=
-endif
-
 ifdef DEBUG
-CXXTFLAGS=-DDEBUG -g $(CXXBASEFLAGS) $(LPEGLEXFLAG)
+CXXTFLAGS=-DDEBUG -g $(CXXBASEFLAGS)
 else
-CXXTFLAGS=-DNDEBUG -Os $(CXXBASEFLAGS) $(LPEGLEXFLAG)
+CXXTFLAGS=-DNDEBUG -Os $(CXXBASEFLAGS)
 endif
 
 ### LUA ###
@@ -152,7 +138,7 @@ deps:
 	$(CC) -MM `$(CONFIGFLAGS)` $(CXXFLAGS) *.cxx ../src/*.cxx >deps.mak
 
 # make should be run in ../../scintilla/gtk to compile all the lexers.
-COMPLIB=../../$(SCINTILLA)/bin/scintilla.a
+COMPLIB=../../scintilla/bin/scintilla.a
 
 $(PROG): SciTEGTK.o FilePath.o SciTEBase.o SciTEBuffers.o SciTEIO.o Exporters.o \
 MultiplexExtension.o DirectorExtension.o SciTEProps.o Utf8_16.o \

@@ -1,69 +1,63 @@
-ifdef USELPEGLEX
-SCINTILLA=scintilla-st
-else
-SCINTILLA=scintilla
-endif
-
 DirectorExtension.o: DirectorExtension.cxx \
-  ../../$(SCINTILLA)/include/Platform.h ../../$(SCINTILLA)/include/PropSet.h \
-  ../../$(SCINTILLA)/include/SString.h ../../$(SCINTILLA)/include/Scintilla.h \
-  ../../$(SCINTILLA)/include/Accessor.h ../src/Extender.h \
+  ../../scintilla/include/Platform.h ../../scintilla/include/PropSet.h \
+  ../../scintilla/include/SString.h ../../scintilla/include/Scintilla.h \
+  ../../scintilla/include/Accessor.h ../src/Extender.h \
   DirectorExtension.h ../src/SciTE.h ../src/FilePath.h ../src/SciTEBase.h
-SciTEGTK.o: SciTEGTK.cxx ../../$(SCINTILLA)/include/Platform.h \
-  ../src/SciTE.h ../../$(SCINTILLA)/include/PropSet.h \
-  ../../$(SCINTILLA)/include/SString.h ../../$(SCINTILLA)/include/Accessor.h \
-  ../../$(SCINTILLA)/include/KeyWords.h ../../$(SCINTILLA)/include/Scintilla.h \
-  ../../$(SCINTILLA)/include/ScintillaWidget.h ../src/Extender.h \
+SciTEGTK.o: SciTEGTK.cxx ../../scintilla/include/Platform.h \
+  ../src/SciTE.h ../../scintilla/include/PropSet.h \
+  ../../scintilla/include/SString.h ../../scintilla/include/Accessor.h \
+  ../../scintilla/include/KeyWords.h ../../scintilla/include/Scintilla.h \
+  ../../scintilla/include/ScintillaWidget.h ../src/Extender.h \
   ../src/FilePath.h ../src/SciTEBase.h ../src/SciTEKeys.h ../src/MultiplexExtension.h \
   ../src/LuaExtension.h DirectorExtension.h pixmapsGNOME.h SciIcon.h
-Exporters.o: ../src/Exporters.cxx ../../$(SCINTILLA)/include/Platform.h \
-  ../src/SciTE.h ../../$(SCINTILLA)/include/PropSet.h \
-  ../../$(SCINTILLA)/include/SString.h ../../$(SCINTILLA)/include/Accessor.h \
-  ../../$(SCINTILLA)/include/WindowAccessor.h \
-  ../../$(SCINTILLA)/include/Scintilla.h ../src/Extender.h \
+Exporters.o: ../src/Exporters.cxx ../../scintilla/include/Platform.h \
+  ../src/SciTE.h ../../scintilla/include/PropSet.h \
+  ../../scintilla/include/SString.h ../../scintilla/include/Accessor.h \
+  ../../scintilla/include/WindowAccessor.h \
+  ../../scintilla/include/Scintilla.h ../src/Extender.h \
   ../src/FilePath.h ../src/SciTEBase.h
 IFaceTable.o: ../src/IFaceTable.cxx ../src/IFaceTable.h
 ifdef LUA51
 LuaExtension51.o: ../src/LuaExtension51.cxx \
-  ../../$(SCINTILLA)/include/Scintilla.h ../../$(SCINTILLA)/include/Accessor.h \
+  ../../scintilla/include/Scintilla.h ../../scintilla/include/Accessor.h \
   ../src/Extender.h ../src/LuaExtension.h \
-  ../../$(SCINTILLA)/include/SString.h ../src/SciTEKeys.h \
+  ../../scintilla/include/SString.h ../src/SciTEKeys.h \
   ../src/IFaceTable.h ../lua/include/lua.h ../lua/include/lualib.h \
-  ../lua/include/lauxlib.h ../../$(SCINTILLA)/include/Platform.h
+  ../lua/include/lauxlib.h ../../scintilla/include/Platform.h
 else
 LuaExtension.o: ../src/LuaExtension.cxx \
-  ../../$(SCINTILLA)/include/Scintilla.h ../../$(SCINTILLA)/include/Accessor.h \
+  ../../scintilla/include/Scintilla.h ../../scintilla/include/Accessor.h \
   ../src/Extender.h ../src/LuaExtension.h \
-  ../../$(SCINTILLA)/include/SString.h ../src/SciTEKeys.h \
+  ../../scintilla/include/SString.h ../src/SciTEKeys.h \
   ../src/IFaceTable.h ../lua/include/lua.h ../lua/include/lualib.h \
-  ../lua/include/lauxlib.h ../../$(SCINTILLA)/include/Platform.h
+  ../lua/include/lauxlib.h ../../scintilla/include/Platform.h
 endif
 MultiplexExtension.o: ../src/MultiplexExtension.cxx \
   ../src/MultiplexExtension.h ../src/Extender.h \
-  ../../$(SCINTILLA)/include/Scintilla.h
-SciTEBase.o: ../src/SciTEBase.cxx ../../$(SCINTILLA)/include/Platform.h \
-  ../src/SciTE.h ../../$(SCINTILLA)/include/PropSet.h \
-  ../../$(SCINTILLA)/include/SString.h ../../$(SCINTILLA)/include/Accessor.h \
-  ../../$(SCINTILLA)/include/WindowAccessor.h \
-  ../../$(SCINTILLA)/include/KeyWords.h ../../$(SCINTILLA)/include/Scintilla.h \
-  ../../$(SCINTILLA)/include/ScintillaWidget.h \
-  ../../$(SCINTILLA)/include/SciLexer.h ../src/Extender.h ../src/FilePath.h ../src/SciTEBase.h
+  ../../scintilla/include/Scintilla.h
+SciTEBase.o: ../src/SciTEBase.cxx ../../scintilla/include/Platform.h \
+  ../src/SciTE.h ../../scintilla/include/PropSet.h \
+  ../../scintilla/include/SString.h ../../scintilla/include/Accessor.h \
+  ../../scintilla/include/WindowAccessor.h \
+  ../../scintilla/include/KeyWords.h ../../scintilla/include/Scintilla.h \
+  ../../scintilla/include/ScintillaWidget.h \
+  ../../scintilla/include/SciLexer.h ../src/Extender.h ../src/FilePath.h ../src/SciTEBase.h
 SciTEBuffers.o: ../src/SciTEBuffers.cxx \
-  ../../$(SCINTILLA)/include/Platform.h ../src/SciTE.h \
-  ../../$(SCINTILLA)/include/PropSet.h ../../$(SCINTILLA)/include/SString.h \
-  ../../$(SCINTILLA)/include/Accessor.h \
-  ../../$(SCINTILLA)/include/WindowAccessor.h \
-  ../../$(SCINTILLA)/include/Scintilla.h ../../$(SCINTILLA)/include/SciLexer.h \
+  ../../scintilla/include/Platform.h ../src/SciTE.h \
+  ../../scintilla/include/PropSet.h ../../scintilla/include/SString.h \
+  ../../scintilla/include/Accessor.h \
+  ../../scintilla/include/WindowAccessor.h \
+  ../../scintilla/include/Scintilla.h ../../scintilla/include/SciLexer.h \
   ../src/Extender.h ../src/FilePath.h ../src/SciTEBase.h
-SciTEIO.o: ../src/SciTEIO.cxx ../../$(SCINTILLA)/include/Platform.h \
-  ../src/SciTE.h ../../$(SCINTILLA)/include/PropSet.h \
-  ../../$(SCINTILLA)/include/SString.h ../../$(SCINTILLA)/include/Accessor.h \
-  ../../$(SCINTILLA)/include/WindowAccessor.h \
-  ../../$(SCINTILLA)/include/Scintilla.h ../src/Extender.h ../src/Utf8_16.h \
+SciTEIO.o: ../src/SciTEIO.cxx ../../scintilla/include/Platform.h \
+  ../src/SciTE.h ../../scintilla/include/PropSet.h \
+  ../../scintilla/include/SString.h ../../scintilla/include/Accessor.h \
+  ../../scintilla/include/WindowAccessor.h \
+  ../../scintilla/include/Scintilla.h ../src/Extender.h ../src/Utf8_16.h \
   ../src/FilePath.h ../src/SciTEBase.h
-SciTEProps.o: ../src/SciTEProps.cxx ../../$(SCINTILLA)/include/Platform.h \
-  ../src/SciTE.h ../../$(SCINTILLA)/include/PropSet.h \
-  ../../$(SCINTILLA)/include/SString.h ../../$(SCINTILLA)/include/Accessor.h \
-  ../../$(SCINTILLA)/include/Scintilla.h ../../$(SCINTILLA)/include/SciLexer.h \
+SciTEProps.o: ../src/SciTEProps.cxx ../../scintilla/include/Platform.h \
+  ../src/SciTE.h ../../scintilla/include/PropSet.h \
+  ../../scintilla/include/SString.h ../../scintilla/include/Accessor.h \
+  ../../scintilla/include/Scintilla.h ../../scintilla/include/SciLexer.h \
   ../src/Extender.h ../src/FilePath.h ../src/SciTEBase.h
 Utf8_16.o: ../src/Utf8_16.cxx ../src/Utf8_16.h

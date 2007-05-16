@@ -912,15 +912,6 @@ bool SciTEBase::FindMatchingBracePosition(bool editor, int &braceAtCaret, int &b
 		braceAtCaret = caretPos - 1;
 	}
 	bool colonMode = false;
-// modified by Mitchell
-#ifndef USELPEGLEX
-	if ((lexLanguage == SCLEX_PYTHON) &&
-	        (':' == charBefore) && (SCE_P_OPERATOR == styleBefore)) {
-		braceAtCaret = caretPos - 1;
-		colonMode = true;
-	}
-#endif
-// end modified by mitchell
 	bool isAfter = true;
 	if (lengthDoc > 0 && sloppy && (braceAtCaret < 0) && (caretPos < lengthDoc)) {
 		// No brace found so check other side
@@ -932,15 +923,6 @@ bool SciTEBase::FindMatchingBracePosition(bool editor, int &braceAtCaret, int &b
 				braceAtCaret = caretPos;
 				isAfter = false;
 			}
-// modified by Mitchell
-#ifndef USELPEGLEX
-			if ((lexLanguage == SCLEX_PYTHON) &&
-			        (':' == charAfter) && (SCE_P_OPERATOR == styleAfter)) {
-				braceAtCaret = caretPos;
-				colonMode = true;
-			}
-#endif
-// end modified by Mitchell
 		}
 	}
 	if (braceAtCaret >= 0) {
@@ -3153,18 +3135,6 @@ bool SciTEBase::HandleXml(char ch) {
 	if (ch != '>') {
 		return false;
 	}
-
-	// modified by Mitchell
-#ifndef USELPEGLEX
-	// This may make sense only in certain languages
-	if (lexLanguage != SCLEX_HTML && lexLanguage != SCLEX_XML &&
-	        lexLanguage != SCLEX_ASP && lexLanguage != SCLEX_PHP) {
-		return false;
-	}
-#else
-	return false; // don't bother with completion
-#endif
-	// end modified by Mitchell
 
 	// If the user has turned us off, quit now.
 	// Default is off
