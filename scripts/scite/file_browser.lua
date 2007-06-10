@@ -93,7 +93,7 @@ function FileBrowser.action()
     editor:SetSel(pos, pos)
   else
     editor:SetSel(pos, pos)
-    scite.Open(abs_path)
+    scite.Open( string.sub(abs_path, 2, -2) )
   end
 end
 
