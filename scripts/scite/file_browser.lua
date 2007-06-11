@@ -26,24 +26,26 @@
 ]]--
 
 -- platform-specific options
-local PLATFORM = PLATFORM or 'linux'
-local LS_CMD, LSD_CMD, REDIRECT, FILE_OUT, ROOT, LINE_END
-local LS_CMD2
+local PLATFORM = _G.PLATFORM or 'linux'
+local LS_CMD, LSD_CMD, REDIRECT1, FILE_OUT, ROOT, LINE_END
+local LS_CMD2, REDIRECT2
 if PLATFORM == 'linux' then
-  LS_CMD   = 'ls -1p '
-  LSD_CMD  = 'ls -dhl '
-  REDIRECT = ' &> '
-  FILE_OUT = '/tmp/scite_output'
-  ROOT     = '/'
-  LINE_END = '\n'
+  LS_CMD    = 'ls -1p '
+  LSD_CMD   = 'ls -dhl '
+  REDIRECT1 = ' 1> '
+  REDIRECT2 = ' 2>&1 '
+  FILE_OUT  = '/tmp/scite_output'
+  ROOT      = '/'
+  LINE_END  = '\n'
 elseif PLATFORM == 'windows' then
-  LS_CMD   = 'dir /A:D /B "'
-  LS_CMD2  = 'dir /A:-D /B "'
-  LSD_CMD  = 'dir /A /Q "'
-  REDIRECT = '" > '
-  FILE_OUT = os.getenv('TEMP')..'\\scite_output.txt'
-  ROOT     = 'C:/'
-  LINE_END = '\r\n'
+  LS_CMD    = 'dir /A:D /B "'
+  LS_CMD2   = 'dir /A:-D /B "'
+  LSD_CMD   = 'dir /A /Q "'
+  REDIRECT1 = '" 1> '
+  REDIRECT2 = ' 2>&1 '
+  FILE_OUT  = os.getenv('TEMP')..'\\scite_output.txt'
+  ROOT      = 'C:/'
+  LINE_END  = '\r\n'
 end
 -- end options
 
@@ -110,7 +112,7 @@ function FileBrowser.show_file_details()
 
   local line_num = editor:LineFromPosition(editor.CurrentPos)
   local abs_path = get_abs_path(item, line_num)
-  os.execute(LSD_CMD..abs_path..REDIRECT..FILE_OUT)
+  os.execute(LSD_CMD..abs_path..REDIRECT1..FILE_OUT..REDIRECT2)
 
   local f = io.open(FILE_OUT)
   local out
@@ -163,7 +165,7 @@ end
 
 -- returns contents of a directory
 get_dir_contents = function(abs_path)
-  os.execute(LS_CMD..abs_path..REDIRECT..FILE_OUT)
+  os.execute(LS_CMD..abs_path..REDIRECT1..FILE_OUT..REDIRECT2)
   local f = io.open(FILE_OUT)
   local out = ''
   if PLATFORM == 'linux' then
@@ -174,7 +176,7 @@ get_dir_contents = function(abs_path)
       out = out..item..'/'..LINE_END
     end
     f:close()
-    os.execute(LS_CMD2..abs_path..REDIRECT..FILE_OUT)
+    os.execute(LS_CMD2..abs_path..REDIRECT1..FILE_OUT..REDIRECT2)
     f = io.open(FILE_OUT)
     out = out..f:read('*all') -- these are files
   end
