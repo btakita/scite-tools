@@ -293,7 +293,7 @@ static int cf_global_inputdialog(lua_State *L) {
 }
 
 static int cf_scite_update_status_bar(lua_State *L) {
-	bool bUpdateSlowData = lua_gettop(L) > 0 ? lua_toboolean(L, 1) : false;
+	bool bUpdateSlowData = (lua_gettop(L) > 0 ? lua_toboolean(L, 1) : false) != 0;
 	host->UpdateStatusBar(bUpdateSlowData);
 	return 0;
 }
