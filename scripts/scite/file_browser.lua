@@ -28,7 +28,7 @@
 -- platform-specific options
 local PLATFORM = _G.PLATFORM or 'linux'
 local LS_CMD, LSD_CMD, REDIRECT1, FILE_OUT, ROOT, LINE_END
-local LS_CMD2, REDIRECT2
+local LS_CMD2, REDIRECT2, DIR_SEP
 if PLATFORM == 'linux' then
   LS_CMD    = 'ls -1p '
   LSD_CMD   = 'ls -dhl '
@@ -37,15 +37,17 @@ if PLATFORM == 'linux' then
   FILE_OUT  = '/tmp/scite_output'
   ROOT      = '/'
   LINE_END  = '\n'
+  DIR_SEP   = '/'
 elseif PLATFORM == 'windows' then
-  LS_CMD    = 'dir /A:D /B "'
-  LS_CMD2   = 'dir /A:-D /B "'
-  LSD_CMD   = 'dir /A /Q "'
-  REDIRECT1 = '" 1> '
+  LS_CMD    = 'dir /A:D /B '
+  LS_CMD2   = 'dir /A:-D /B '
+  LSD_CMD   = 'dir /A /Q '
+  REDIRECT1 = ' 1> '
   REDIRECT2 = ' 2>&1 '
   FILE_OUT  = os.getenv('TEMP')..'\\scite_output.txt'
-  ROOT      = 'C:/'
+  ROOT      = 'C:\\'
   LINE_END  = '\r\n'
+  DIR_SE    = '\\'
 end
 -- end options
 
@@ -60,8 +62,8 @@ FileBrowser = {}
 function FileBrowser.create()
   local root_dir = get_sel_or_line()
   if root_dir ~= '' then
-    if string.sub( root_dir, string.len(root_dir) ) ~= '/' then
-      root_dir = root_dir..'/'
+    if string.sub( root_dir, string.len(root_dir) ) ~= DIR_SEP then
+      root_dir = root_dir..DIR_SEP
     end
     ROOT = root_dir
   end
@@ -173,7 +175,7 @@ get_dir_contents = function(abs_path)
   elseif PLATFORM == 'windows' then
     for line in f:lines() do -- these are directories
       local _, _, item = string.find(line, '^(.+)$')
-      out = out..item..'/'..LINE_END
+      out = out..item..DIR_SEP..LINE_END
     end
     f:close()
     os.execute(LS_CMD2..abs_path..REDIRECT1..FILE_OUT..REDIRECT2)
@@ -188,7 +190,7 @@ end
 -- changes in indentation
 get_abs_path = function(item, line_num)
   local indentation = editor.LineIndentation[line_num]
-  if indentation == 0 then return ROOT..item end
+  if indentation == 0 then return '"'..ROOT..item..'"' end
   local abs_path = item
   local target_indent = indentation - editor.Indent
   local regex = '^%s*(.+)$'
@@ -206,7 +208,7 @@ end
 
 -- returns whether the item in question is a directory or not
 is_dir = function(item)
-  return string.sub( item, string.len(item) ) == '/'
+  return string.sub( item, string.len(item) ) == DIR_SEP
 end
 
 -- returns whether the directory is open or not
@@ -220,9 +222,11 @@ open_dir = function(abs_path, line_num)
   local contents = get_dir_contents(abs_path)
   local pos = editor:PositionFromLine(line_num + 1)
   local indentation = editor.LineIndentation[line_num]
-  editor:InsertText(pos, contents)
-  editor:SetSel( pos, pos + string.len(contents) )
-  for i = 0, indentation / editor.Indent do editor:Tab() end
+  if string.len(contents) > 0 then
+    editor:InsertText(pos, contents)
+    editor:SetSel( pos, pos + string.len(contents) )
+    for i = 0, indentation / editor.Indent do editor:Tab() end
+  end
 end
 
 -- closes directory, hiding its contents
