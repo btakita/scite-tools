@@ -135,7 +135,7 @@ function FileBrowser.show_file_details()
       if string.find(line, '^%d') then
         local _, _, mod_date, size, owner = string.find(line,
           '^([%d/]+%s%s[%d:]+%s[AP]M)%s+([%d,]+)'..
-          '%s([%w\\%.]+)%s.+$')
+          '%s([^%s]+).*$')
         if mod_date and size and owner then
           out = item..'\n'..
                 'Owner:\t'..owner..'\n'..
