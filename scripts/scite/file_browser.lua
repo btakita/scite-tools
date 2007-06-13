@@ -47,7 +47,7 @@ elseif PLATFORM == 'windows' then
   FILE_OUT  = os.getenv('TEMP')..'\\scite_output.txt'
   ROOT      = 'C:\\'
   LINE_END  = '\r\n'
-  DIR_SE    = '\\'
+  DIR_SEP    = '\\'
 end
 -- end options
 
