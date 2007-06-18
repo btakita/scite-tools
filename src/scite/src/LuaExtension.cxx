@@ -117,14 +117,6 @@ inline bool IFacePropertyIsScriptable(const IFaceProperty &p) {
 		(p.paramType == iface_bool)) && (p.getter || p.setter));
 }
 
-static int cf_getglobal_wrapper(lua_State *L) {
-	if (lua_gettop(L) == 1) {
-		lua_gettable(L, LUA_GLOBALSINDEX);
-		return 1;
-	}
-	return 0;
-}
-
 inline void raise_error(lua_State *L, const char *errMsg=NULL) {
 	luaL_where(L, 1);
 	if (errMsg) {
@@ -136,24 +128,12 @@ inline void raise_error(lua_State *L, const char *errMsg=NULL) {
 	lua_error(L);
 }
 
-static bool safe_getglobal(lua_State *L) {
-	// is this still needed?  could just use lua_rawget / rawget_library_object
-	lua_pushcfunction(L, cf_getglobal_wrapper);
-	lua_insert(L, -2);
-	if (0==lua_pcall(L, 1, 1, 0)) {
-		return true;
-	} else {
-		lua_pop(L, 1); // ignore error message
-		lua_pushnil(L); // like regular getglobal, push nil if no match
-		return false;
-	}
-}
-
 inline int absolute_index(lua_State *L, int index) {
 	return ((index < 0) && (index != LUA_REGISTRYINDEX) && (index != LUA_GLOBALSINDEX))
 		? (lua_gettop(L) + index + 1) : index;
 }
 
+// copy the contents of one table into another returning the size
 static int merge_table(lua_State *L, int destTableIdx, int srcTableIdx, bool copyMetatable = false) {
 	int count = 0;
 	if (lua_istable(L, destTableIdx) && lua_istable(L, srcTableIdx)) {
@@ -163,10 +143,9 @@ static int merge_table(lua_State *L, int destTableIdx, int srcTableIdx, bool cop
 			lua_getmetatable(L, srcTableIdx);
 			lua_setmetatable(L, destTableIdx);
 		}
-
 		lua_pushnil(L); // first key
 		while (lua_next(L, srcTableIdx) != 0) {
-			// ‘key’ is at index -2 and ‘value’ at index -1
+			// key is at index -2 and value at index -1
 			lua_pushvalue(L, -2); // the key
 			lua_insert(L, -2); // leaving value (-1), key (-2), key (-3)
 			lua_rawset(L, destTableIdx);
@@ -176,6 +155,7 @@ static int merge_table(lua_State *L, int destTableIdx, int srcTableIdx, bool cop
 	return count;
 }
 
+// make a copy of a table (not deep), leaving it at the top of the stack
 static bool clone_table(lua_State *L, int srcTableIdx, bool copyMetatable = false) {
 	if (lua_istable(L, srcTableIdx)) {
 		srcTableIdx = absolute_index(L, srcTableIdx);
@@ -188,16 +168,17 @@ static bool clone_table(lua_State *L, int srcTableIdx, bool copyMetatable = fals
 	}
 }
 
+// loop through each key in the table and set its value to nil
 static void clear_table(lua_State *L, int tableIdx, bool clearMetatable = true) {
 	if (lua_istable(L, tableIdx)) {
 		tableIdx = absolute_index(L, tableIdx);
-	if (clearMetatable) {
-		lua_pushnil(L);
-		lua_setmetatable(L, tableIdx);
-	}
+		if (clearMetatable) {
+			lua_pushnil(L);
+			lua_setmetatable(L, tableIdx);
+		}
 		lua_pushnil(L); // first key
 		while (lua_next(L, tableIdx) != 0) {
-			// ‘key’ is at index -2 and ‘value’ at index -1
+			// key is at index -2 and value at index -1
 			lua_pop(L, 1); // discard value
 			lua_pushnil(L);
 			lua_rawset(L, tableIdx); // table[key] = nil
@@ -206,23 +187,19 @@ static void clear_table(lua_State *L, int tableIdx, bool clearMetatable = true) 
 	}
 }
 
-static bool rawget_library_object(lua_State *L, const char *basename, const char *subname = NULL) {
-	lua_pushstring(L, basename);
-	lua_rawget(L, LUA_GLOBALSINDEX);
-	if (!lua_isnil(L, -1)) {
-		if (!subname) {
-			return true;
-		} else if (lua_istable(L, -1)) {
-			lua_pushstring(L, subname);
-			lua_rawget(L, -2);
-			lua_replace(L, -2);
-			if (!lua_isnil(L, -1)) {
-				return true;
+// Lua 5.1's checkudata throws an error on failure, we don't want that, we want NULL
+static void *checkudata(lua_State *L, int ud, const char *tname) {
+	void *p = lua_touserdata(L, ud);
+	if (p != NULL) { // value is a userdata?
+		if (lua_getmetatable(L, ud)) { // does it have a metatable?
+			lua_getfield(L, LUA_REGISTRYINDEX, tname); // get correct metatable
+			if (lua_rawequal(L, -1, -2)) { // does it have correct mt?
+				lua_pop(L, 2);
+				return p;
 			}
 		}
 	}
-	lua_pop(L,1);
-	return false;
+	return NULL;
 }
 
 static int cf_scite_send(lua_State *L) {
@@ -302,23 +279,23 @@ static int cf_scite_menu_command(lua_State *L) {
 	return 0;
 }
 
-// added by Mitchell
-static int cf_global_inputdialog(lua_State *L) {
-	if (lua_isstring(L, 1) && lua_isstring(L, 2)) {
-		const char *title = lua_tostring(L, 1);
-		const char *label = lua_tostring(L, 2);
-		const char *text  = (lua_gettop(L) > 2 && lua_isstring(L, 3)) ? lua_tostring(L, 3) : "";
-		char *result = host->InputDialog(title, label, text);
-		(strlen(result) > 0) ? lua_pushstring(L, result) : lua_pushnil(L);
-		if (result)	delete []result;
-	} else raise_error(L, "Expected string parameters in 'inputdialog'.");
-	return 1;
-}
-
 static int cf_scite_update_status_bar(lua_State *L) {
-	bool bUpdateSlowData = lua_gettop(L) > 0 ? lua_toboolean(L, 1) : false;
+	bool bUpdateSlowData = (lua_gettop(L) > 0 ? lua_toboolean(L, 1) : false) != 0;
 	host->UpdateStatusBar(bUpdateSlowData);
 	return 0;
+}
+
+// added by Mitchell
+static int cf_global_inputdialog(lua_State *L) {
+	const char *title = luaL_checkstring(L, 1);
+	const char *label = luaL_checkstring(L, 2);
+	const char *text  = (lua_gettop(L) > 2 && lua_isstring(L, 3)) ? lua_tostring(L, 3) : "";
+	char *result = host->InputDialog(title, label, text);
+	strlen(result) > 0 ? lua_pushstring(L, result) : lua_pushnil(L);
+	if (result) {
+		delete []result;
+	}
+	return 1;
 }
 
 static int cf_scite_get_buffer_path(lua_State *L) {
@@ -338,14 +315,14 @@ static int cf_scite_get_clipboard_contents(lua_State *L) {
 // end added by Mitchell
 
 static ExtensionAPI::Pane check_pane_object(lua_State *L, int index) {
-	ExtensionAPI::Pane *pPane = reinterpret_cast<ExtensionAPI::Pane*>(luaL_checkudata(L, index, "SciTE_MT_Pane"));
+	ExtensionAPI::Pane *pPane = reinterpret_cast<ExtensionAPI::Pane*>(checkudata(L, index, "SciTE_MT_Pane"));
 
 	if ((!pPane) && lua_istable(L, index)) {
 		// so that nested objects have a convenient way to do a back reference
 		int absIndex = absolute_index(L, index);
 		lua_pushliteral(L, "pane");
 		lua_gettable(L, absIndex);
-		pPane = reinterpret_cast<ExtensionAPI::Pane*>(luaL_checkudata(L, -1, "SciTE_MT_Pane"));
+		pPane = reinterpret_cast<ExtensionAPI::Pane*>(checkudata(L, -1, "SciTE_MT_Pane"));
 	}
 
 	if (pPane) {
@@ -478,7 +455,7 @@ struct PaneMatchObject {
 };
 
 static int cf_match_replace(lua_State *L) {
-	PaneMatchObject *pmo = reinterpret_cast<PaneMatchObject*>(luaL_checkudata(L, 1, "SciTE_MT_PaneMatchObject"));
+	PaneMatchObject *pmo = reinterpret_cast<PaneMatchObject*>(checkudata(L, 1, "SciTE_MT_PaneMatchObject"));
 	if (!pmo) {
 		raise_error(L, "Self argument for match:replace() should be a pane match object.");
 		return 0;
@@ -503,7 +480,7 @@ static int cf_match_replace(lua_State *L) {
 }
 
 static int cf_match_metatable_index(lua_State *L) {
-	PaneMatchObject *pmo = reinterpret_cast<PaneMatchObject*>(luaL_checkudata(L, 1, "SciTE_MT_PaneMatchObject"));
+	PaneMatchObject *pmo = reinterpret_cast<PaneMatchObject*>(checkudata(L, 1, "SciTE_MT_PaneMatchObject"));
 	if (!pmo) {
 		raise_error(L, "Internal error: pane match object is missing.");
 		return 0;
@@ -549,7 +526,7 @@ static int cf_match_metatable_index(lua_State *L) {
 }
 
 static int cf_match_metatable_tostring(lua_State *L) {
-	PaneMatchObject *pmo = reinterpret_cast<PaneMatchObject*>(luaL_checkudata(L, 1, "SciTE_MT_PaneMatchObject"));
+	PaneMatchObject *pmo = reinterpret_cast<PaneMatchObject*>(checkudata(L, 1, "SciTE_MT_PaneMatchObject"));
 	if (!pmo) {
 		raise_error(L, "Internal error: pane match object is missing.");
 		return 0;
@@ -616,10 +593,9 @@ static int cf_pane_match(lua_State *L) {
 	}
 }
 
-
 static int cf_pane_match_generator(lua_State *L) {
 	const char *text = lua_tostring(L, 1);
-	PaneMatchObject *pmo = reinterpret_cast<PaneMatchObject*>(luaL_checkudata(L, 2, "SciTE_MT_PaneMatchObject"));
+	PaneMatchObject *pmo = reinterpret_cast<PaneMatchObject*>(checkudata(L, 2, "SciTE_MT_PaneMatchObject"));
 
 	if (!(text)) {
 		raise_error(L, "Internal error: invalid state for <pane>:match generator.");
@@ -662,7 +638,6 @@ static int cf_pane_match_generator(lua_State *L) {
 	lua_pushnil(L);
 	return 1;
 }
-
 
 static int cf_props_metatable_index(lua_State *L) {
 	int selfArg = lua_isuserdata(L, 1) ? 1 : 0;
@@ -720,8 +695,7 @@ static int cf_os_execute(lua_State *L) {
 static int cf_global_print(lua_State *L) {
 	int nargs = lua_gettop(L);
 
-	lua_pushliteral(L, "tostring");
-	safe_getglobal(L);
+	lua_getglobal(L, "tostring");
 
 	for (int i = 1; i <= nargs; ++i) {
 		if (i > 1)
@@ -731,7 +705,7 @@ static int cf_global_print(lua_State *L) {
 		if (argStr) {
 			host->Trace(argStr);
 		} else {
-			lua_pushvalue(L, -1);
+			lua_pushvalue(L, -1); // tostring
 			lua_pushvalue(L, i);
 			lua_call(L, 1, 1);
 			argStr = lua_tostring(L, -1);
@@ -757,29 +731,6 @@ static int cf_global_trace(lua_State *L) {
 	return 0;
 }
 
-
-static int cf_global_alert(lua_State *L) {
-	if (host) {
-		static bool alreadyWarned = false;
-		if (!alreadyWarned) {
-			alreadyWarned = true;
-			host->Trace("\n> **Warning** alert() is probably going to be renamed or removed.  Consider using print() instead.\n\n");
-		}
-
-		SString msg = lua_tostring(L, 1);
-		if (msg.substitute("\n", "> "))
-			msg.substitute("\r\n", "\n");
-
-		msg.insert(0, "> ");
-
-		msg.append("\n");
-
-		host->Trace(msg.c_str());
-	}
-	return 0;
-}
-
-
 static int cf_global_dostring(lua_State *L) {
 	int nargs = lua_gettop(L);
 	const char *code = luaL_checkstring(L, 1);
@@ -793,30 +744,13 @@ static int cf_global_dostring(lua_State *L) {
 	return 0;
 }
 
-static void call_alert(lua_State *L, const char *s = NULL) {
-	lua_pushliteral(L, "_ALERT");
-	lua_rawget(L, LUA_GLOBALSINDEX);
-	if (!lua_isfunction(L, -1)) {
-		lua_pop(L, 1);
-		lua_pushcfunction(L, cf_global_print);
-	}
-	if (s) {
-		lua_pushstring(L, s);
-	} else {
-		lua_insert(L, -2);
-	}
-	lua_pcall(L, 1, 0, 0);
-}
-
-
 static bool call_function(lua_State *L, int nargs, bool ignoreFunctionReturnValue=false) {
 	bool handled = false;
-
 	if (L) {
 		int traceback = 0;
 		if (tracebackEnabled) {
-			lua_pushliteral(L, "_TRACEBACK");
-			if (safe_getglobal(L) && lua_isfunction(L, -1)) {
+			lua_getglobal(L, "print");
+			if (lua_isfunction(L, -1)) {
 				traceback = lua_gettop(L) - nargs - 1;
 				lua_insert(L, traceback);
 			} else {
@@ -838,7 +772,9 @@ static bool call_function(lua_State *L, int nargs, bool ignoreFunctionReturnValu
 				lua_pop(L, 1);
 			}
 		} else if (result == LUA_ERRRUN) {
-			call_alert(L); // use pushed error message
+			lua_getglobal(L, "print");
+			lua_insert(L, -2); // use pushed error message
+			lua_pcall(L, 1, 0, 0);
 		} else {
 			lua_pop(L, 1);
 			if (result == LUA_ERRMEM) {
@@ -856,8 +792,8 @@ static bool call_function(lua_State *L, int nargs, bool ignoreFunctionReturnValu
 static bool CallNamedFunction(char *name) {
 	bool handled = false;
 	if (luaState) {
-		lua_pushstring(luaState, name);
-		if (safe_getglobal(luaState) && lua_isfunction(luaState, -1)) {
+		lua_getglobal(luaState, name);
+		if (lua_isfunction(luaState, -1)) {
 			handled = call_function(luaState, 0);
 		} else {
 			lua_pop(luaState, 1);
@@ -869,8 +805,8 @@ static bool CallNamedFunction(char *name) {
 static bool CallNamedFunction(const char *name, const char *arg) {
 	bool handled = false;
 	if (luaState) {
-		lua_pushstring(luaState, name);
-		if (safe_getglobal(luaState) && lua_isfunction(luaState, -1)) {
+		lua_getglobal(luaState, name);
+		if (lua_isfunction(luaState, -1)) {
 			lua_pushstring(luaState, arg);
 			handled = call_function(luaState, 1);
 		} else {
@@ -884,8 +820,8 @@ static bool CallNamedFunction(const char *name, const char *arg) {
 static bool CallNamedFunction(const char *name, const char * stringArg1, const char *stringArg2) {
 	bool handled = false;
 	if (luaState) {
-		lua_pushstring(luaState, name);
-		if (safe_getglobal(luaState) && lua_isfunction(luaState, -1)) {
+		lua_getglobal(luaState, name);
+		if (lua_isfunction(luaState, -1)) {
 			lua_pushstring(luaState, stringArg1);
 			lua_pushstring(luaState, stringArg2);
 			handled = call_function(luaState, 2);
@@ -900,8 +836,8 @@ static bool CallNamedFunction(const char *name, const char * stringArg1, const c
 static bool CallNamedFunction(const char *name, int numberArg, const char *stringArg) {
 	bool handled = false;
 	if (luaState) {
-		lua_pushstring(luaState, name);
-		if (safe_getglobal(luaState) && lua_isfunction(luaState, -1)) {
+		lua_getglobal(luaState, name);
+		if (lua_isfunction(luaState, -1)) {
 			lua_pushnumber(luaState, numberArg);
 			lua_pushstring(luaState, stringArg);
 			handled = call_function(luaState, 2);
@@ -954,7 +890,6 @@ static int iface_function_helper(lua_State *L, const IFaceFunction &func) {
 		}
 	}
 
-
 	if (needStringResult) {
 		int stringResultLen = host->Send(p, func.value, params[0], 0);
 		if (stringResultLen > 0) {
@@ -1003,8 +938,6 @@ static int iface_function_helper(lua_State *L, const IFaceFunction &func) {
 	return resultCount;
 }
 
-
-
 struct IFacePropertyBinding {
 	ExtensionAPI::Pane pane;
 	const IFaceProperty *prop;
@@ -1013,7 +946,7 @@ struct IFacePropertyBinding {
 static int cf_ifaceprop_metatable_index(lua_State *L) {
 	// if there is a getter, __index calls it
 	// otherwise, __index raises "property 'name' is write-only".
-	IFacePropertyBinding *ipb = reinterpret_cast<IFacePropertyBinding*>(luaL_checkudata(L, 1, "SciTE_MT_IFacePropertyBinding"));
+	IFacePropertyBinding *ipb = reinterpret_cast<IFacePropertyBinding*>(checkudata(L, 1, "SciTE_MT_IFacePropertyBinding"));
 	if (!(ipb && IFacePropertyIsScriptable(*(ipb->prop)))) {
 		raise_error(L, "Internal error: property binding is improperly set up");
 		return 0;
@@ -1032,7 +965,7 @@ static int cf_ifaceprop_metatable_index(lua_State *L) {
 }
 
 static int cf_ifaceprop_metatable_newindex(lua_State *L) {
-	IFacePropertyBinding *ipb = reinterpret_cast<IFacePropertyBinding*>(luaL_checkudata(L, 1, "SciTE_MT_IFacePropertyBinding"));
+	IFacePropertyBinding *ipb = reinterpret_cast<IFacePropertyBinding*>(checkudata(L, 1, "SciTE_MT_IFacePropertyBinding"));
 	if (!(ipb && IFacePropertyIsScriptable(*(ipb->prop)))) {
 		raise_error(L, "Internal error: property binding is improperly set up");
 		return 0;
@@ -1209,41 +1142,31 @@ static int cf_pane_metatable_newindex(lua_State *L) {
 void push_pane_object(lua_State *L, ExtensionAPI::Pane p) {
 	*reinterpret_cast<ExtensionAPI::Pane*>(lua_newuserdata(L, sizeof(p))) = p;
 	if (luaL_newmetatable(L, "SciTE_MT_Pane")) {
-		lua_pushliteral(L, "__index");
 		lua_pushcfunction(L, cf_pane_metatable_index);
-		lua_settable(L, -3);
-		lua_pushliteral(L, "__newindex");
+		lua_setfield(L, -2, "__index");
 		lua_pushcfunction(L, cf_pane_metatable_newindex);
-		lua_settable(L, -3);
+		lua_setfield(L, -2, "__newindex");
 
 		// Push built-in functions into the metatable, where the custom
 		// __index metamethod will find them.
 
-		lua_pushliteral(L, "findtext");
 		lua_pushcfunction(L, cf_pane_findtext);
-		lua_settable(L, -3);
-		lua_pushliteral(L, "textrange");
+		lua_setfield(L, -2, "findtext");
 		lua_pushcfunction(L, cf_pane_textrange);
-		lua_settable(L, -3);
-		lua_pushliteral(L, "insert");
+		lua_setfield(L, -2, "textrange");
 		lua_pushcfunction(L, cf_pane_insert);
-		lua_settable(L, -3);
-		lua_pushliteral(L, "remove");
+		lua_setfield(L, -2, "insert");
 		lua_pushcfunction(L, cf_pane_remove);
-		lua_settable(L, -3);
-		lua_pushliteral(L, "append");
+		lua_setfield(L, -2, "remove");
 		lua_pushcfunction(L, cf_pane_append);
-		lua_settable(L, -3);
+		lua_setfield(L, -2, "append");
 
-		lua_pushliteral(L, "match");
 		lua_pushcfunction(L, cf_pane_match_generator);
 		lua_pushcclosure(L, cf_pane_match, 1);
-		lua_settable(L, -3);
+		lua_setfield(L, -2, "match");
 	}
-	lua_setmetatable(L,-2);
+	lua_setmetatable(L, -2);
 }
-
-
 
 static int cf_global_metatable_index(lua_State *L) {
 	if (lua_isstring(L, 2)) {
@@ -1277,8 +1200,6 @@ static int cf_global_metatable_index(lua_State *L) {
 	return 0; // global namespace access should not raise errors
 }
 
-
-
 static int LuaPanicFunction(lua_State *L) {
 	if (L == luaState) {
 		lua_close(luaState);
@@ -1288,9 +1209,6 @@ static int LuaPanicFunction(lua_State *L) {
 	host->Trace("\n> Lua: error occurred in unprotected call.  This is very bad.\n");
 	return 1;
 }
-
-
-
 
 // Don't initialise Lua in LuaExtension::Initialise.  Wait and initialise Lua the
 // first time Lua is used, e.g. when a Load event is called with an argument that
@@ -1311,24 +1229,6 @@ static char *CheckStartupScript() {
 	}
 
 	return startupScript;
-}
-
-void IsolateGlobalReqLoadedTable() {
-	// The require built-in uses a global _LOADED to remember which
-	// files have been loaded.  Since we're resetting the global
-	// scope in Extension::Clear, the _LOADED table should be reset
-	// to its original value.  To accomplish this, while still
-	// remembering any files that were loaded in startup, a deep
-	// copy of the _LOADED table is needed.
-
-	lua_pushliteral(luaState, "_LOADED");
-	lua_rawget(luaState, LUA_GLOBALSINDEX);
-	if (!lua_isnil(luaState, -1)) {
-		lua_pushliteral(luaState, "_LOADED");
-		clone_table(luaState, -2);
-		lua_rawset(luaState, LUA_GLOBALSINDEX);
-	}
-	lua_pop(luaState, 1);
 }
 
 void PublishGlobalBufferData() {
@@ -1380,14 +1280,19 @@ static bool InitGlobalScope(bool checkProperties, bool forceReload = false) {
 		// copy of the initialized global environment, and uses that to re-init the scope.
 
 		if (!reload) {
-			lua_pushliteral(luaState, "SciTE_InitialState");
-			lua_rawget(luaState, LUA_REGISTRYINDEX);
+			lua_getfield(luaState, LUA_REGISTRYINDEX, "SciTE_InitialState");
 			if (lua_istable(luaState, -1)) {
 				clear_table(luaState, LUA_GLOBALSINDEX, true);
 				merge_table(luaState, LUA_GLOBALSINDEX, -1, true);
 				lua_pop(luaState, 1);
 
-				IsolateGlobalReqLoadedTable();
+				// restore initial package.loaded state
+				lua_getfield(luaState, LUA_REGISTRYINDEX, "SciTE_InitialPackageState");
+				lua_getfield(luaState, LUA_REGISTRYINDEX, "_LOADED");
+				clear_table(luaState, -1, false);
+				merge_table(luaState, -1, -2, false);
+				lua_pop(luaState, 2);
+
 				PublishGlobalBufferData();
 
 				return true;
@@ -1399,19 +1304,24 @@ static bool InitGlobalScope(bool checkProperties, bool forceReload = false) {
 		// reload mode is enabled, or else the inital state has been broken.
 		// either way, we're going to need a "new" initial state.
 
-		lua_pushliteral(luaState, "SciTE_InitialState");
 		lua_pushnil(luaState);
-		lua_rawset(luaState, LUA_REGISTRYINDEX);
+		lua_setfield(luaState, LUA_REGISTRYINDEX, "SciTE_InitialState");
 
 		// Also reset buffer data, since scripts might depend on this to know
 		// whether they need to re-initialize something.
-		lua_pushliteral(luaState, "SciTE_BufferData_Array");
 		lua_pushnil(luaState);
-		lua_rawset(luaState, LUA_REGISTRYINDEX);
+		lua_setfield(luaState, LUA_REGISTRYINDEX, "SciTE_BufferData_Array");
 
 		// Don't replace global scope using new_table, because then startup script is
 		// bound to a different copy of the globals than the extension script.
 		clear_table(luaState, LUA_GLOBALSINDEX, true);
+
+		// Lua 5.1: _LOADED is in LUA_REGISTRYINDEX, so it must be cleared before
+		// loading libraries or they will not load because Lua's package system
+		// thinks they are already loaded
+		lua_pushnil(luaState);
+		lua_setfield(luaState, LUA_REGISTRYINDEX, "_LOADED");
+
 	} else if (!luaDisabled) {
 		luaState = lua_open();
 		if (!luaState) {
@@ -1420,28 +1330,15 @@ static bool InitGlobalScope(bool checkProperties, bool forceReload = false) {
 			return false;
 		}
 		lua_atpanic(luaState, LuaPanicFunction);
+
 	} else {
 		return false;
 	}
 
-	int stackBase = lua_gettop(luaState);
-
 	// ...register standard libraries
-	luaopen_base(luaState);
-	luaopen_string(luaState);
-	luaopen_table(luaState);
-	luaopen_math(luaState);
-	luaopen_io(luaState);
-	luaopen_debug(luaState);
-#if PLAT_WIN
-	// loadlib might also work on Linux and some Unix variants, with some additional defines.
-	luaopen_loadlib(luaState);
-#endif
+	luaL_openlibs(luaState);
 
 	lua_register(luaState, "_ALERT", cf_global_print);
-
-	// This one should be renamed or removed, I think.
-	lua_register(luaState, "alert", cf_global_alert);
 
 	// although this is mostly redundant with output:append
 	// it is still included for now
@@ -1459,84 +1356,64 @@ static bool InitGlobalScope(bool checkProperties, bool forceReload = false) {
 	lua_register(luaState, "inputdialog", cf_global_inputdialog);
 	// end added by Mitchell
 
-	// the above calls all leave something on the stack: the library table, the function, etc.
-	lua_settop(luaState, stackBase);
-
 	// props object - provides access to Property and SetProperty
-	lua_pushliteral(luaState, "props");
 	lua_newuserdata(luaState, 1); // the value doesn't matter.
 	if (luaL_newmetatable(luaState, "SciTE_MT_Props")) {
-		lua_pushliteral(luaState, "__index");
 		lua_pushcfunction(luaState, cf_props_metatable_index);
-		lua_settable(luaState, -3);
-		lua_pushliteral(luaState, "__newindex");
+		lua_setfield(luaState, -2, "__index");
 		lua_pushcfunction(luaState, cf_props_metatable_newindex);
-		lua_settable(luaState, -3);
+		lua_setfield(luaState, -2, "__newindex");
 	}
 	lua_setmetatable(luaState, -2);
-	lua_rawset(luaState, LUA_GLOBALSINDEX);
+	lua_setglobal(luaState, "props");
 
 	// pane objects
-	lua_pushliteral(luaState, "editor");
 	push_pane_object(luaState, ExtensionAPI::paneEditor);
-	lua_rawset(luaState, LUA_GLOBALSINDEX);
+	lua_setglobal(luaState, "editor");
 
-	lua_pushliteral(luaState, "output");
 	push_pane_object(luaState, ExtensionAPI::paneOutput);
-	lua_rawset(luaState, LUA_GLOBALSINDEX);
+	lua_setglobal(luaState, "output");
 
-	lua_pushliteral(luaState, "scite");
+	// scite
 	lua_newtable(luaState);
 
-	lua_pushliteral(luaState, "SendEditor");
-	lua_pushliteral(luaState, "editor");
-	lua_rawget(luaState, LUA_GLOBALSINDEX);
+	lua_getglobal(luaState, "editor");
 	lua_pushcclosure(luaState, cf_scite_send, 1);
-	lua_rawset(luaState, -3);
+	lua_setfield(luaState, -2, "SendEditor");
 
-	lua_pushliteral(luaState, "SendOutput");
-	lua_pushliteral(luaState, "output");
-	lua_rawget(luaState, LUA_GLOBALSINDEX);
+	lua_getglobal(luaState, "output");
 	lua_pushcclosure(luaState, cf_scite_send, 1);
-	lua_rawset(luaState, -3);
+	lua_setfield(luaState, -2, "SendOutput");
 
-	lua_pushliteral(luaState, "ConstantName");
 	lua_pushcfunction(luaState, cf_scite_constname);
-	lua_rawset(luaState, -3);
+	lua_setfield(luaState, -2, "ConstantName");
 
-	lua_pushliteral(luaState, "Open");
 	lua_pushcfunction(luaState, cf_scite_open);
-	lua_rawset(luaState, -3);
+	lua_setfield(luaState, -2, "Open");
+
+	lua_pushcfunction(luaState, cf_scite_menu_command);
+	lua_setfield(luaState, -2, "MenuCommand");
+
+	lua_pushcfunction(luaState, cf_scite_update_status_bar);
+	lua_setfield(luaState, -2, "UpdateStatusBar");
 
 	// added by Mitchell
-	lua_pushliteral(luaState, "MenuCommand");
-	lua_pushcfunction(luaState, cf_scite_menu_command);
-	lua_rawset(luaState, -3);
-
-	lua_pushliteral(luaState, "UpdateStatusBar");
-	lua_pushcfunction(luaState, cf_scite_update_status_bar);
-	lua_rawset(luaState, -3);
-
-	lua_pushliteral(luaState, "BufferPath");
 	lua_pushcfunction(luaState, cf_scite_get_buffer_path);
-	lua_rawset(luaState, -3);
+	lua_setfield(luaState, -2, "BufferPath");
 
-	lua_pushliteral(luaState, "SwitchToBuffer");
 	lua_pushcfunction(luaState, cf_scite_switch_buffer);
-	lua_rawset(luaState, -3);
+	lua_setfield(luaState, -2, "SwitchToBuffer");
 
-	lua_pushliteral(luaState, "GetClipboardText");
 	lua_pushcfunction(luaState, cf_scite_get_clipboard_contents);
-	lua_rawset(luaState, -3);
+	lua_setfield(luaState, -2, "GetClipboardText");
 	// end added by Mitchell
 
-	lua_rawset(luaState, LUA_GLOBALSINDEX);
+	lua_setglobal(luaState, "scite");
 
 	// Metatable for global namespace, to publish iface constants
 	if (luaL_newmetatable(luaState, "SciTE_MT_GlobalScope")) {
-		lua_pushliteral(luaState, "__index");
 		lua_pushcfunction(luaState, cf_global_metatable_index);
-		lua_settable(luaState, -3);
+		lua_setfield(luaState, -2, "__index");
 	}
 	lua_setmetatable(luaState, LUA_GLOBALSINDEX);
 
@@ -1560,18 +1437,19 @@ static bool InitGlobalScope(bool checkProperties, bool forceReload = false) {
 	// Clone the initial state (including metatable) in the registry so that it can be restored.
 	// (If reset==1 this will not be used, but this is a shallow copy, not very expensive, and
 	// who knows what the value of reset will be the next time InitGlobalScope runs.)
-
-	lua_pushliteral(luaState, "SciTE_InitialState");
 	clone_table(luaState, LUA_GLOBALSINDEX, true);
-	lua_rawset(luaState, LUA_REGISTRYINDEX);
+	lua_setfield(luaState, LUA_REGISTRYINDEX, "SciTE_InitialState");
 
-	IsolateGlobalReqLoadedTable();
+	// Clone loaded packages (package.loaded) state in the registry so that it can be restored.
+	lua_getfield(luaState, LUA_REGISTRYINDEX, "_LOADED");
+	clone_table(luaState, -1);
+	lua_setfield(luaState, LUA_REGISTRYINDEX, "SciTE_InitialPackageState");
+	lua_pop(luaState, 1);
+
 	PublishGlobalBufferData();
 
 	return true;
 }
-
-
 
 bool LuaExtension::Initialise(ExtensionAPI *host_) {
 	host = host_;
@@ -1603,9 +1481,9 @@ bool LuaExtension::Finalise() {
 }
 
 bool LuaExtension::Clear() {
-	if (luaState) { // added by Mitchell
-		CallNamedFunction("OnClear"); // added by Mitchell
-	} // added by Mitchell
+	if (luaState) {
+		CallNamedFunction("OnClear");
+	}
 	if (luaState) {
 		InitGlobalScope(true);
 		extensionScript.clear();
@@ -1647,14 +1525,12 @@ bool LuaExtension::InitBuffer(int index) {
 		// This buffer might be recycled.  Clear the data associated
 		// with the old file.
 
-		lua_pushliteral(luaState, "SciTE_BufferData_Array");
-		lua_rawget(luaState, LUA_REGISTRYINDEX);
+		lua_getfield(luaState, LUA_REGISTRYINDEX, "SciTE_BufferData_Array");
 		if (lua_istable(luaState, -1)) {
 			lua_pushnil(luaState);
 			lua_rawseti(luaState, -2, index);
-		} else {
-			lua_pop(luaState, 1);
 		}
+		lua_pop(luaState, 1);
 		// We also need to handle cases where Lua initialization is
 		// delayed (e.g. no startup script).  For that we'll just
 		// explicitly call InitBuffer(curBufferIndex)
@@ -1691,8 +1567,7 @@ bool LuaExtension::RemoveBuffer(int index) {
 		// current maxBufferIndex can be discarded after
 		// it gets copied to maxBufferIndex-1.
 
-		lua_pushliteral(luaState, "SciTE_BufferData_Array");
-		lua_rawget(luaState, LUA_REGISTRYINDEX);
+		lua_getfield(luaState, LUA_REGISTRYINDEX, "SciTE_BufferData_Array");
 		if (lua_istable(luaState, -1)) {
 			for (int i = index; i < maxBufferIndex; ++i) {
 				lua_rawgeti(luaState, -1, i+1);
@@ -1723,36 +1598,39 @@ bool LuaExtension::OnExecute(const char *s) {
 	if (luaState || InitGlobalScope(false)) {
 		// May as well use Lua's pattern matcher to parse the command.
 		// Scintilla's RESearch was the other option.
-
 		int stackBase = lua_gettop(luaState);
 
-		if (rawget_library_object(luaState, "string", "find")) {
-			lua_pushstring(luaState, s);
-			lua_pushliteral(luaState, "^%s*([%a_][%a%d_]*)%s*(.-)%s*$");
-
-			int status = lua_pcall(luaState, 2, 4, 0);
-			if (status==0) {
-				lua_insert(luaState, stackBase+1);
-
-				if (safe_getglobal(luaState)) {
-					if (lua_isfunction(luaState, -1)) {
-						// Try calling it and, even if it fails, short-circuit Filerx
-
-						handled = true;
-
-						lua_insert(luaState, stackBase+1);
-
-						lua_settop(luaState, stackBase+2);
-
-						if (!call_function(luaState, 1, true)) {
-							host->Trace(">Lua: error occurred while processing command\n");
+		lua_pushliteral(luaState, "string");
+		lua_rawget(luaState, LUA_GLOBALSINDEX);
+		if (lua_istable(luaState, -1)) {
+			lua_pushliteral(luaState, "find");
+			lua_rawget(luaState, -2);
+			if (lua_isfunction(luaState, -1)) {
+				lua_pushstring(luaState, s);
+				lua_pushliteral(luaState, "^%s*([%a_][%a%d_]*)%s*(.-)%s*$");
+				int status = lua_pcall(luaState, 2, 4, 0);
+				if (status==0) {
+					lua_insert(luaState, stackBase+1);
+					lua_gettable(luaState, LUA_GLOBALSINDEX);
+					if (!lua_isnil(luaState, -1)) {
+						if (lua_isfunction(luaState, -1)) {
+							// Try calling it and, even if it fails, short-circuit Filerx
+							handled = true;
+							lua_insert(luaState, stackBase+1);
+							lua_settop(luaState, stackBase+2);
+							if (!call_function(luaState, 1, true)) {
+								host->Trace(">Lua: error occurred while processing command\n");
+							}
 						}
+					} else {
+						host->Trace("> Lua: error checking global scope for command\n");
 					}
-				} else {
-					host->Trace("> Lua: error checking global scope for command\n");
 				}
 			}
+		} else {
+			host->Trace("> Lua: string library not loaded\n");
 		}
+
 		lua_settop(luaState, stackBase);
 	}
 
@@ -1798,25 +1676,6 @@ bool LuaExtension::OnChar(char ch) {
 	return CallNamedFunction("OnChar", chs);
 }
 
-// added by Mitchell
-bool LuaExtension::OnKey(int keyval, int modifiers) {
-	bool handled = false;
-	if (luaState) {
-		lua_pushstring(luaState, "OnKey");
-		if (safe_getglobal(luaState) && lua_isfunction(luaState, -1)) {
-			lua_pushnumber(luaState, keyval);
-			lua_pushboolean(luaState, (SCMOD_SHIFT & modifiers) != 0 ? 1 : 0); // shift/lock
-			lua_pushboolean(luaState, (SCMOD_CTRL  & modifiers) != 0 ? 1 : 0); // control
-			lua_pushboolean(luaState, (SCMOD_ALT   & modifiers) != 0 ? 1 : 0); // alt
-			handled = call_function(luaState, 4);
-		} else {
-			lua_pop(luaState, 1);
-		}
-	}
-	return handled;
-}
-// end added by Mitchell
-
 bool LuaExtension::OnSavePointReached() {
 	return CallNamedFunction("OnSavePointReached");
 }
@@ -1824,24 +1683,6 @@ bool LuaExtension::OnSavePointReached() {
 bool LuaExtension::OnSavePointLeft() {
 	return CallNamedFunction("OnSavePointLeft");
 }
-
-// added by Mitchell
-bool LuaExtension::OnStyle(unsigned int startPos, int lengthDoc, int initStyle, Accessor *) {
-	bool handled = false;
-	if (luaState) {
-		lua_pushstring(luaState, "OnStyle");
-		if (safe_getglobal(luaState) && lua_isfunction(luaState, -1)) {
-			lua_pushnumber(luaState, startPos);
-			lua_pushnumber(luaState, lengthDoc);
-			lua_pushnumber(luaState, initStyle);
-			handled = call_function(luaState, 3);
-		} else {
-			lua_pop(luaState, 1);
-		}
-	}
-	return handled;
-}
-// end added by Mitchell
 
 bool LuaExtension::OnDoubleClick() {
 	return CallNamedFunction("OnDoubleClick");
@@ -1855,16 +1696,41 @@ bool LuaExtension::OnMarginClick() {
 	return CallNamedFunction("OnMarginClick");
 }
 
+bool LuaExtension::OnUserListSelection(int listType, const char *selection) {
+	return CallNamedFunction("OnUserListSelection", listType, selection);
+}
+
+bool LuaExtension::OnKey(int keyval, int modifiers) {
+	bool handled = false;
+	if (luaState) {
+		lua_getglobal(luaState, "OnKey");
+		if (lua_isfunction(luaState, -1)) {
+			lua_pushnumber(luaState, keyval);
+			lua_pushboolean(luaState, (SCMOD_SHIFT & modifiers) != 0 ? 1 : 0); // shift/lock
+			lua_pushboolean(luaState, (SCMOD_CTRL  & modifiers) != 0 ? 1 : 0); // control
+			lua_pushboolean(luaState, (SCMOD_ALT   & modifiers) != 0 ? 1 : 0); // alt
+			handled = call_function(luaState, 4);
+		} else {
+			lua_pop(luaState, 1);
+		}
+	}
+	return handled;
+}
+
+bool LuaExtension::OnDwellStart(int pos, const char *word) {
+	return CallNamedFunction("OnDwellStart", pos, word);
+}
+
+bool LuaExtension::OnClose(const char *filename) {
+	return CallNamedFunction("OnClose", filename);
+}
+
+
 // added by Mitchell
 bool LuaExtension::OnMacro(const char *p, const char *q) {
 	return CallNamedFunction("OnMacro", p, q);
 }
 // end added by Mitchell
-
-bool LuaExtension::OnUserListSelection(int listType, const char *selection) {
-	return CallNamedFunction("OnUserListSelection", listType, selection);
-}
-
 
 #ifdef _MSC_VER
 // Unreferenced inline functions are OK

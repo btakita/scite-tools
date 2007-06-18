@@ -272,6 +272,12 @@ const char *contributors[] = {
             "Rob McMullen",
             "Stefan Schwendeler",
             "Cristian Adam",
+            "Nicolas Chachereau",
+            "Istvan Szollosi",
+            "Xie Renhui",
+            "Enrico Tr\xc3\xb6ger",
+            "Todd Whiteman",
+            "Yuval Papish",
         };
 
 // AddStyledText only called from About so static size buffer is OK
@@ -580,14 +586,14 @@ void SciTEBase::SetAboutMessage(WindowID wsci, const char *appTitle) {
 		}
 #endif
 		AddStyledText(wsci, GetTranslationToAbout("Version").c_str(), trsSty);
-		AddStyledText(wsci, " 1.73\n", 1);
+		AddStyledText(wsci, " 1.74\n", 1);
 		AddStyledText(wsci, "    " __DATE__ " " __TIME__ "\n", 1);
 		SetAboutStyle(wsci, 2, ColourDesired(0, 0, 0));
 		Platform::SendScintilla(wsci, SCI_STYLESETITALIC, 2, 1);
 		AddStyledText(wsci, GetTranslationToAbout("by").c_str(), trsSty);
 		AddStyledText(wsci, " Neil Hodgson.\n", 2);
 		SetAboutStyle(wsci, 3, ColourDesired(0, 0, 0));
-		AddStyledText(wsci, "December 1998-March 2007.\n", 3);
+		AddStyledText(wsci, "December 1998-June 2007.\n", 3);
 		SetAboutStyle(wsci, 4, ColourDesired(0, 0x7f, 0x7f));
 		AddStyledText(wsci, "http://www.scintilla.org\n", 4);
 		AddStyledText(wsci, "Lua scripting language by TeCGraf, PUC-Rio\n", 3);
@@ -912,6 +918,11 @@ bool SciTEBase::FindMatchingBracePosition(bool editor, int &braceAtCaret, int &b
 		braceAtCaret = caretPos - 1;
 	}
 	bool colonMode = false;
+	if ((lexLanguage == SCLEX_PYTHON) &&
+	        (':' == charBefore) && (SCE_P_OPERATOR == styleBefore)) {
+		braceAtCaret = caretPos - 1;
+		colonMode = true;
+	}
 	bool isAfter = true;
 	if (lengthDoc > 0 && sloppy && (braceAtCaret < 0) && (caretPos < lengthDoc)) {
 		// No brace found so check other side
@@ -922,6 +933,11 @@ bool SciTEBase::FindMatchingBracePosition(bool editor, int &braceAtCaret, int &b
 			if (charAfter && IsBrace(charAfter) && ((styleAfter == bracesStyleCheck) || (!bracesStyle))) {
 				braceAtCaret = caretPos;
 				isAfter = false;
+			}
+			if ((lexLanguage == SCLEX_PYTHON) &&
+			        (':' == charAfter) && (SCE_P_OPERATOR == styleAfter)) {
+				braceAtCaret = caretPos;
+				colonMode = true;
 			}
 		}
 	}
@@ -1440,10 +1456,8 @@ static int UnSlashAsNeeded(SString &s, bool escapes, bool regularExpression) {
 
 void SciTEBase::RemoveFindMarks() {
 	if (CurrentBuffer()->findMarks != Buffer::fmNone) {
-		int endStyled = SendEditor(SCI_GETENDSTYLED);
-		SendEditor(SCI_STARTSTYLING, 0, INDIC2_MASK);
-		SendEditor(SCI_SETSTYLING, LengthDocument(), 0);
-		SendEditor(SCI_STARTSTYLING, endStyled, 31);
+		SendEditor(SCI_SETINDICATORCURRENT, indicatorMatch);
+		SendEditor(SCI_INDICATORCLEARRANGE, 0, LengthDocument());
 		CurrentBuffer()->findMarks = Buffer::fmNone;
 	}
 }
@@ -1453,9 +1467,9 @@ int SciTEBase::MarkAll() {
 	int marked = 0;
 	int posFirstFound = FindNext(false, false);
 
-	int endStyled = SendEditor(SCI_GETENDSTYLED);
 	SString findMark = props.Get("find.mark");
 	if (findMark.length()) {
+		SendEditor(SCI_SETINDICATORCURRENT, indicatorMatch);
 		RemoveFindMarks();
 		CurrentBuffer()->findMarks = Buffer::fmMarked;
 	}
@@ -1466,14 +1480,10 @@ int SciTEBase::MarkAll() {
 			int line = SendEditor(SCI_LINEFROMPOSITION, posFound);
 			BookmarkAdd(line);
 			if (findMark.length()) {
-				SendEditor(SCI_STARTSTYLING, posFound, INDIC2_MASK);
-				SendEditor(SCI_SETSTYLING, SendEditor(SCI_GETTARGETEND) - posFound, INDIC2_MASK);
+				SendEditor(SCI_INDICATORFILLRANGE, posFound, SendEditor(SCI_GETTARGETEND) - posFound);
 			}
 			posFound = FindNext(false, false);
 		} while ((posFound != -1) && (posFound != posFirstFound));
-	}
-	if (findMark.length()) {
-		SendEditor(SCI_STARTSTYLING, endStyled, 31);
 	}
 	SendEditor(SCI_SETCURRENTPOS, posCurrent);
 	return marked;
@@ -1837,21 +1847,21 @@ void SciTEBase::BookmarkAdd(int lineno) {
 	if (lineno == -1)
 		lineno = GetCurrentLineNumber();
 	if (!BookmarkPresent(lineno))
-		SendEditor(SCI_MARKERADD, lineno, SciTE_MARKER_BOOKMARK);
+		SendEditor(SCI_MARKERADD, lineno, markerBookmark);
 }
 
 void SciTEBase::BookmarkDelete(int lineno) {
 	if (lineno == -1)
 		lineno = GetCurrentLineNumber();
 	if (BookmarkPresent(lineno))
-		SendEditor(SCI_MARKERDELETE, lineno, SciTE_MARKER_BOOKMARK);
+		SendEditor(SCI_MARKERDELETE, lineno, markerBookmark);
 }
 
 bool SciTEBase::BookmarkPresent(int lineno) {
 	if (lineno == -1)
 		lineno = GetCurrentLineNumber();
 	int state = SendEditor(SCI_MARKERGET, lineno);
-	return state & (1 << SciTE_MARKER_BOOKMARK);
+	return state & (1 << markerBookmark);
 }
 
 void SciTEBase::BookmarkToggle(int lineno) {
@@ -1875,9 +1885,9 @@ void SciTEBase::BookmarkNext(bool forwardScan, bool select) {
 		lineRetry = SendEditor(SCI_GETLINECOUNT, 0, 0L);	//If not found, try from the end
 		sci_marker = SCI_MARKERPREVIOUS;
 	}
-	int nextLine = SendEditor(sci_marker, lineStart, 1 << SciTE_MARKER_BOOKMARK);
+	int nextLine = SendEditor(sci_marker, lineStart, 1 << markerBookmark);
 	if (nextLine < 0)
-		nextLine = SendEditor(sci_marker, lineRetry, 1 << SciTE_MARKER_BOOKMARK);
+		nextLine = SendEditor(sci_marker, lineRetry, 1 << markerBookmark);
 	if (nextLine < 0 || nextLine == lineno)	// No bookmark (of the given type) or only one, and already on it
 		WarnUser(warnNoOtherBookmark);
 	else {
@@ -3136,6 +3146,12 @@ bool SciTEBase::HandleXml(char ch) {
 		return false;
 	}
 
+	// This may make sense only in certain languages
+	if (lexLanguage != SCLEX_HTML && lexLanguage != SCLEX_XML &&
+	        lexLanguage != SCLEX_ASP && lexLanguage != SCLEX_PHP) {
+		return false;
+	}
+
 	// If the user has turned us off, quit now.
 	// Default is off
 	SString value = props.GetExpanded("xml.auto.close.tags");
@@ -3898,7 +3914,7 @@ void SciTEBase::MenuCommand(int cmdID, int source) {
 		break;
 
 	case IDM_BOOKMARK_CLEARALL:
-		SendEditor(SCI_MARKERDELETEALL, SciTE_MARKER_BOOKMARK);
+		SendEditor(SCI_MARKERDELETEALL, markerBookmark);
 		RemoveFindMarks();
 		break;
 
@@ -4312,24 +4328,22 @@ void SciTEBase::Notify(SCNotification *notification) {
 		OpenUriList(notification->text);
 		break;
 
-	case SCN_DWELLSTART: {
-			if (INVALID_POSITION == notification->position) {
-				char message[200];
-				sprintf(message, "%0d (%0d,%0d)", notification->position, notification->x, notification->y);
-			} else {
-				int endWord = notification->position;
-				SString message =
-				    RangeExtendAndGrab(wEditor,
-				            notification->position, endWord, &SciTEBase::iswordcharforsel);
-				if (message.length()) {
-					SendEditorString(SCI_CALLTIPSHOW, notification->position, message.c_str());
-				}
+	case SCN_DWELLSTART:
+		if (extender && (INVALID_POSITION != notification->position)) {
+			int endWord = notification->position;
+			SString message =
+				RangeExtendAndGrab(wEditor,
+					notification->position, endWord, &SciTEBase::iswordcharforsel);
+			if (message.length()) {
+				extender->OnDwellStart(notification->position,message.c_str());
 			}
 		}
 		break;
 
 	case SCN_DWELLEND:
-		SendEditorString(SCI_CALLTIPCANCEL, 0, 0);
+		if (extender) {
+			extender->OnDwellStart(0,""); // flags end of calltip
+		}
 		break;
 
 	case SCN_ZOOM:

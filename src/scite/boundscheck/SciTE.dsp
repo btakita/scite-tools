@@ -7,19 +7,19 @@
 CFG=SciTE - Win32 Debug
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
-!MESSAGE 
+!MESSAGE
 !MESSAGE NMAKE /f "SciTE.mak".
-!MESSAGE 
+!MESSAGE
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
-!MESSAGE 
+!MESSAGE
 !MESSAGE NMAKE /f "SciTE.mak" CFG="SciTE - Win32 Debug"
-!MESSAGE 
+!MESSAGE
 !MESSAGE Possible choices for configuration are:
-!MESSAGE 
+!MESSAGE
 !MESSAGE "SciTE - Win32 Release" (based on "Win32 (x86) Application")
 !MESSAGE "SciTE - Win32 Debug" (based on "Win32 (x86) Application")
-!MESSAGE 
+!MESSAGE
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
@@ -84,7 +84,7 @@ LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib imm32.lib comctl32.lib /nologo /debug /machine:I386
 
-!ENDIF 
+!ENDIF
 
 # Begin Target
 
@@ -112,6 +112,10 @@ SOURCE=..\..\scintilla\src\CharClassify.cxx
 # Begin Source File
 
 SOURCE=..\..\scintilla\src\ContractionState.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\scintilla\src\Decoration.cxx
 # End Source File
 # Begin Source File
 
@@ -291,6 +295,10 @@ SOURCE=..\..\scintilla\src\LexFortran.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\scintilla\src\LexGAP.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\scintilla\src\LexGui4Cli.cxx
 # End Source File
 # Begin Source File
@@ -367,7 +375,15 @@ SOURCE=..\..\scintilla\src\LexPerl.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\scintilla\src\LexPLM.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\scintilla\src\LexPOV.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\scintilla\src\LexProgress.cxx
 # End Source File
 # Begin Source File
 
@@ -447,6 +463,10 @@ SOURCE=..\..\scintilla\src\LineMarker.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=..\lua\src\lib\linit.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\lua\src\lib\liolib.c
 # End Source File
 # Begin Source File
@@ -475,6 +495,10 @@ SOURCE=..\lua\src\lopcodes.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\lua\src\lib\loslib.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\lua\src\lparser.c
 # End Source File
 # Begin Source File
@@ -496,10 +520,6 @@ SOURCE=..\lua\src\ltable.c
 # Begin Source File
 
 SOURCE=..\lua\src\lib\ltablib.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\lua\src\ltests.c
 # End Source File
 # Begin Source File
 
@@ -531,11 +551,19 @@ SOURCE=..\..\scintilla\Win32\PlatWin.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\scintilla\Src\PositionCache.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\scintilla\Src\PropSet.cxx
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\scintilla\src\RESearch.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\scintilla\src\RunStyles.cxx
 # End Source File
 # Begin Source File
 

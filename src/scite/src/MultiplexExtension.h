@@ -58,7 +58,6 @@ public:
 	virtual bool OnBeforeSave(const char *);
 	virtual bool OnSave(const char *);
 	virtual bool OnChar(char);
-	virtual bool OnKey(int, int); // added by Mitchell
 	virtual bool OnExecute(const char *);
 	virtual bool OnSavePointReached();
 	virtual bool OnSavePointLeft();
@@ -70,6 +69,10 @@ public:
 	virtual bool OnUserListSelection(int, const char *);
 	
 	virtual bool SendProperty(const char *);
+
+	virtual bool OnKey(int, int);
+	virtual bool OnDwellStart(int, const char *);
+	virtual bool OnClose(const char *);
 
 private:
 	Extension **extensions;

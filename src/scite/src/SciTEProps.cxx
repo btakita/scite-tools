@@ -788,6 +788,8 @@ void SciTEBase::ReadProperties() {
 
 	SendEditor(SCI_SETSTYLEBITS, SendEditor(SCI_GETSTYLEBITSNEEDED));
 
+	SendOutput(SCI_SETLEXER, SCLEX_ERRORLIST);
+
 	SString kw0 = props.GetNewExpand("keywords.", fileNameForExtension.c_str());
 	SendEditorString(SCI_SETKEYWORDS, 0, kw0.c_str());
 
@@ -866,8 +868,8 @@ void SciTEBase::ReadProperties() {
 
 	SString findMark = props.Get("find.mark");
 	if (findMark.length()) {
-		SendEditor(SCI_INDICSETFORE, 2, ColourFromString(findMark));
-		SendEditor(SCI_INDICSETSTYLE, 2, INDIC_ROUNDBOX);
+		SendEditor(SCI_INDICSETSTYLE, indicatorMatch, INDIC_ROUNDBOX);
+		SendEditor(SCI_INDICSETFORE, indicatorMatch, ColourFromString(findMark));
 	}
 
 	SString controlCharSymbol = props.Get("control.char.symbol");
@@ -1035,8 +1037,8 @@ void SciTEBase::ReadProperties() {
 	twoPhaseDraw = props.GetInt("two.phase.draw", 1);
 	SendEditor(SCI_SETTWOPHASEDRAW, twoPhaseDraw);
 
-	SendEditor(SCI_SETLAYOUTCACHE, props.GetInt("cache.layout"));
-	SendOutput(SCI_SETLAYOUTCACHE, props.GetInt("output.cache.layout"));
+	SendEditor(SCI_SETLAYOUTCACHE, props.GetInt("cache.layout", SC_CACHE_CARET));
+	SendOutput(SCI_SETLAYOUTCACHE, props.GetInt("output.cache.layout", SC_CACHE_CARET));
 
 	bracesCheck = props.GetInt("braces.check");
 	bracesSloppy = props.GetInt("braces.sloppy");
@@ -1066,7 +1068,6 @@ void SciTEBase::ReadProperties() {
 	SString lookback = props.GetNewExpand("statement.lookback.", fileNameForExtension.c_str());
 	statementLookback = lookback.value();
 	statementIndent = GetStyleAndWords("statement.indent.");
-	statementEnd = GetStyleAndWords("statement.end.");
 	blockStart = GetStyleAndWords("block.start.");
 	blockEnd = GetStyleAndWords("block.end.");
 
@@ -1198,20 +1199,20 @@ void SciTEBase::ReadProperties() {
 		break;
 	}
 
-	SendEditor(SCI_MARKERSETFORE, SciTE_MARKER_BOOKMARK,
+	SendEditor(SCI_MARKERSETFORE, markerBookmark,
 	           ColourOfProperty(props, "bookmark.fore", ColourDesired(0, 0, 0x7f)));
-	SendEditor(SCI_MARKERSETBACK, SciTE_MARKER_BOOKMARK,
+	SendEditor(SCI_MARKERSETBACK, markerBookmark,
 	           ColourOfProperty(props, "bookmark.back", ColourDesired(0x80, 0xff, 0xff)));
-	SendEditor(SCI_MARKERSETALPHA, SciTE_MARKER_BOOKMARK, props.GetInt("bookmark.alpha", SC_ALPHA_NOALPHA));
+	SendEditor(SCI_MARKERSETALPHA, markerBookmark, props.GetInt("bookmark.alpha", SC_ALPHA_NOALPHA));
 	SString bookMarkXPM = props.Get("bookmark.pixmap");
 	if (bookMarkXPM.length()) {
-		SendEditorString(SCI_MARKERDEFINEPIXMAP, SciTE_MARKER_BOOKMARK,
+		SendEditorString(SCI_MARKERDEFINEPIXMAP, markerBookmark,
 			bookMarkXPM.c_str());
 	} else if (props.Get("bookmark.fore").length()) {
-		SendEditor(SCI_MARKERDEFINE, SciTE_MARKER_BOOKMARK, SC_MARK_CIRCLE);
+		SendEditor(SCI_MARKERDEFINE, markerBookmark, SC_MARK_CIRCLE);
 	} else {
 		// No bookmark.fore setting so display default pixmap.
-		SendEditorString(SCI_MARKERDEFINEPIXMAP, SciTE_MARKER_BOOKMARK,
+		SendEditorString(SCI_MARKERDEFINEPIXMAP, markerBookmark,
 			reinterpret_cast<char *>(bookmarkBluegem));
 	}
 
@@ -1257,6 +1258,9 @@ void SciTEBase::ReadFontProperties() {
 	// Set styles
 	// For each window set the global default style, then the language default style, then the other global styles, then the other language styles
 
+	SendEditor(SCI_STYLERESETDEFAULT, 0, 0);
+	SendOutput(SCI_STYLERESETDEFAULT, 0, 0);
+
 	sprintf(key, "style.%s.%0d", "*", STYLE_DEFAULT);
 	sval = props.GetNewExpand(key);
 	SetOneStyle(wEditor, STYLE_DEFAULT, sval.c_str());
@@ -1266,12 +1270,18 @@ void SciTEBase::ReadFontProperties() {
 	sval = props.GetNewExpand(key);
 	SetOneStyle(wEditor, STYLE_DEFAULT, sval.c_str());
 
+	SendEditor(SCI_STYLECLEARALL, 0, 0);
+
 	SetStyleFor(wEditor, "*");
 	SetStyleFor(wEditor, language.c_str());
+
+	SendOutput(SCI_STYLECLEARALL, 0, 0);
 
 	sprintf(key, "style.%s.%0d", "errorlist", STYLE_DEFAULT);
 	sval = props.GetNewExpand(key);
 	SetOneStyle(wOutput, STYLE_DEFAULT, sval.c_str());
+
+	SendOutput(SCI_STYLECLEARALL, 0, 0);
 
 	SetStyleFor(wOutput, "*");
 	SetStyleFor(wOutput, "errorlist");
@@ -1485,7 +1495,7 @@ FilePath SciTEBase::GetDirectoryPropertiesFileName() {
 		propfile.Set(filePath.Directory(), propDirectoryFileName);
 
 		// if this file does not exist try to find the prop file in a parent directory
-		while (!propfile.Exists() && !propfile.Directory().IsRoot()) {
+		while (!propfile.Directory().IsRoot() && !propfile.Exists()) {
 			propfile.Set(propfile.Directory().Directory(), propDirectoryFileName);
 		}
 

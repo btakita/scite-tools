@@ -27,10 +27,10 @@ public:
 	virtual uptr_t GetInstance()=0;
 	virtual void ShutDown()=0;
 	virtual void Perform(const char *actions)=0;
-
-	// added by Mitchell
 	virtual void DoMenuCommand(int cmdID)=0;
 	virtual void UpdateStatusBar(bool bUpdateSlowData)=0;
+
+	// added by Mitchell
 	virtual void SwitchToBuffer(int index)=0;
 	virtual char *BufferPath(int index)=0;
 	// the following are platform specific:
@@ -61,7 +61,6 @@ public:
 	virtual bool OnBeforeSave(const char *) { return false; }
 	virtual bool OnSave(const char *) { return false; }
 	virtual bool OnChar(char) { return false; }
-	virtual bool OnKey(int, int) { return false; } // added by Mitchell
 	virtual bool OnExecute(const char *) { return false; }
 	virtual bool OnSavePointReached() { return false; }
 	virtual bool OnSavePointLeft() { return false; }
@@ -75,6 +74,10 @@ public:
 	virtual bool OnUserListSelection(int, const char *) { return false; }
 
 	virtual bool SendProperty(const char *) { return false; }
+
+	virtual bool OnKey(int, int) { return false; }
+	virtual bool OnDwellStart(int, const char *) { return false; }
+	virtual bool OnClose(const char *) { return false; }
 };
 
 #endif

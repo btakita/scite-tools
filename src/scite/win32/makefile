@@ -41,7 +41,7 @@ LUA_CORE_OBJS = lapi.o lcode.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o \
 		ltable.o ltm.o lundump.o lvm.o lzio.o
 
 LUA_LIB_OBJS =	lauxlib.o lbaselib.o ldblib.o liolib.o lmathlib.o ltablib.o \
-		lstrlib.o loadlib.o
+		lstrlib.o loadlib.o loslib.o linit.o
 
 LUA_OBJS = LuaExtension.o IFaceTable.o SingleThreadExtension.o $(LUA_CORE_OBJS) $(LUA_LIB_OBJS)
 
@@ -95,15 +95,15 @@ LEXPROPS=\
 ..\bin\csound.properties ..\bin\css.properties ..\bin\d.properties \
 ..\bin\eiffel.properties ..\bin\erlang.properties ..\bin\escript.properties \
 ..\bin\flagship.properties ..\bin\forth.properties ..\bin\fortran.properties \
-..\bin\freebasic.properties ..\bin\html.properties ..\bin\inno.properties \
-..\bin\kix.properties ..\bin\latex.properties ..\bin\lisp.properties \
-..\bin\lot.properties ..\bin\lout.properties ..\bin\lua.properties \
-..\bin\matlab.properties ..\bin\metapost.properties ..\bin\mmixal.properties \
-..\bin\nncrontab.properties ..\bin\nsis.properties ..\bin\opal.properties \
-..\bin\others.properties ..\bin\pascal.properties ..\bin\perl.properties \
-..\bin\pov.properties ..\bin\ps.properties ..\bin\purebasic.properties \
-..\bin\python.properties ..\bin\rebol.properties ..\bin\ruby.properties \
-..\bin\scriptol.properties ..\bin\smalltalk.properties \
+..\bin\freebasic.properties ..\bin\gap.properties ..\bin\html.properties \
+..\bin\inno.properties ..\bin\kix.properties ..\bin\latex.properties \
+..\bin\lisp.properties ..\bin\lot.properties ..\bin\lout.properties \
+..\bin\lua.properties ..\bin\matlab.properties ..\bin\metapost.properties \
+..\bin\mmixal.properties ..\bin\nncrontab.properties ..\bin\nsis.properties \
+..\bin\opal.properties ..\bin\others.properties ..\bin\pascal.properties \
+..\bin\perl.properties ..\bin\pov.properties ..\bin\ps.properties \
+..\bin\purebasic.properties ..\bin\python.properties ..\bin\rebol.properties \
+..\bin\ruby.properties ..\bin\scriptol.properties ..\bin\smalltalk.properties \
 ..\bin\specman.properties ..\bin\spice.properties ..\bin\sql.properties \
 ..\bin\tcl.properties ..\bin\tex.properties ..\bin\vb.properties \
 ..\bin\verilog.properties ..\bin\vhdl.properties ..\bin\yaml.properties
@@ -175,6 +175,8 @@ deps:
 ..\bin\fortran.properties:	..\src\fortran.properties
 	$(COPY) $^ $@
 ..\bin\freebasic.properties:	..\src\freebasic.properties
+	$(COPY) $^ $@
+..\bin\gap.properties:	..\src\gap.properties
 	$(COPY) $^ $@
 ..\bin\html.properties:	..\src\html.properties
 	$(COPY) $^ $@
@@ -259,9 +261,9 @@ OBJSSTATIC = Sc1.o SciTEWinBar.o SciTEWinDlg.o MultiplexExtension.o \
 	UniqueInstance.o SciTEBase.o FilePath.o SciTEBuffers.o \
 	SciTEIO.o Exporters.o SciTEProps.o ScintillaWinL.o ScintillaBaseL.o Editor.o \
 	WindowAccessor.o DocumentAccessor.o KeyWords.o ExternalLexer.o StyleContext.o\
-	Lexers.a PropSet.o \
-	ContractionState.o CharClassify.o Document.o CellBuffer.o CallTip.o Sc1Res.o PlatWin.o \
-	UniConversion.o Utf8_16.o KeyMap.o Indicator.o LineMarker.o RESearch.o Style.o \
+	Lexers.a PropSet.o RunStyles.o \
+	ContractionState.o CharClassify.o Decoration.o Document.o CellBuffer.o CallTip.o Sc1Res.o PlatWin.o \
+	PositionCache.o UniConversion.o Utf8_16.o KeyMap.o Indicator.o LineMarker.o RESearch.o Style.o \
 	ViewStyle.o AutoComplete.o DirectorExtension.o MultiplexExtension.o XPM.o $(LUA_OBJS)
 
 $(PROGSTATIC): $(OBJSSTATIC)

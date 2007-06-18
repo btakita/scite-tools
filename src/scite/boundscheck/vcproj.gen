@@ -169,6 +169,9 @@
 				RelativePath="..\..\scintilla\src\ContractionState.cxx">
 			</File>
 			<File
+				RelativePath="..\..\scintilla\src\Decoration.cxx">
+			</File>
+			<File
 				RelativePath="..\win32\DirectorExtension.cxx">
 			</File>
 			<File
@@ -298,10 +301,16 @@
 				RelativePath="..\..\scintilla\Win32\PlatWin.cxx">
 			</File>
 			<File
+				RelativePath="..\..\scintilla\Src\PositionCache.cxx">
+			</File>
+			<File
 				RelativePath="..\..\scintilla\Src\PropSet.cxx">
 			</File>
 			<File
 				RelativePath="..\..\scintilla\src\RESearch.cxx">
+			</File>
+			<File
+				RelativePath="..\..\scintilla\src\RunStyles.cxx">
 			</File>
 			<File
 				RelativePath="..\..\scintilla\src\ScintillaBase.cxx">

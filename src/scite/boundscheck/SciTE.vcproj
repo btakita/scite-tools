@@ -169,6 +169,9 @@
 				RelativePath="..\..\scintilla\src\ContractionState.cxx">
 			</File>
 			<File
+				RelativePath="..\..\scintilla\src\Decoration.cxx">
+			</File>
+			<File
 				RelativePath="..\win32\DirectorExtension.cxx">
 			</File>
 			<File
@@ -301,6 +304,9 @@
 				RelativePath="..\..\scintilla\src\LexFortran.cxx">
 			</File>
 			<File
+				RelativePath="..\..\scintilla\src\LexGAP.cxx">
+			</File>
+			<File
 				RelativePath="..\..\scintilla\src\LexGui4Cli.cxx">
 			</File>
 			<File
@@ -320,9 +326,6 @@
 			</File>
 			<File
 				RelativePath="..\..\scintilla\src\LexLout.cxx">
-			</File>
-			<File
-				RelativePath="..\..\scintilla\src\LexLPeg.cxx">
 			</File>
 			<File
 				RelativePath="..\..\scintilla\src\LexLua.cxx">
@@ -361,7 +364,13 @@
 				RelativePath="..\..\scintilla\src\LexPerl.cxx">
 			</File>
 			<File
+				RelativePath="..\..\scintilla\src\LexPLM.cxx">
+			</File>
+			<File
 				RelativePath="..\..\scintilla\src\LexPOV.cxx">
+			</File>
+			<File
+				RelativePath="..\..\scintilla\src\LexProgress.cxx">
 			</File>
 			<File
 				RelativePath="..\..\scintilla\src\LexPS.cxx">
@@ -482,10 +491,16 @@
 				RelativePath="..\..\scintilla\Win32\PlatWin.cxx">
 			</File>
 			<File
+				RelativePath="..\..\scintilla\Src\PositionCache.cxx">
+			</File>
+			<File
 				RelativePath="..\..\scintilla\Src\PropSet.cxx">
 			</File>
 			<File
 				RelativePath="..\..\scintilla\src\RESearch.cxx">
+			</File>
+			<File
+				RelativePath="..\..\scintilla\src\RunStyles.cxx">
 			</File>
 			<File
 				RelativePath="..\..\scintilla\src\ScintillaBase.cxx">

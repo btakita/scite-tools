@@ -1,4 +1,5 @@
-# Make file for SciTE on Windows Visual C++ and Borland C++ version# Copyright 1998-2001 by Neil Hodgson <neilh@scintilla.org>
+# Make file for SciTE on Windows Visual C++ and Borland C++ version
+# Copyright 1998-2001 by Neil Hodgson <neilh@scintilla.org>
 # The License.txt file describes the conditions under which this software may be distributed.
 # This makefile is for using Visual C++ with nmake or Borland C++ with make depending on
 # the setting of the VENDOR macro. If no VENDOR is defined n the command line then
@@ -15,11 +16,7 @@
 
 DIR_BIN=..\bin
 
-!IFDEF LUA51
-PROG=$(DIR_BIN)\SciTE51.exe
-!ELSE
 PROG=$(DIR_BIN)\SciTE.exe
-!ENDIF
 PROGSTATIC=$(DIR_BIN)\Sc1.exe
 DLLS=$(DIR_BIN)\Scintilla.dll $(DIR_BIN)\SciLexer.dll
 
@@ -138,6 +135,7 @@ LEXOBJS=\
 	..\..\scintilla\win32\LexFlagship.obj \
 	..\..\scintilla\win32\LexForth.obj \
 	..\..\scintilla\win32\LexFortran.obj \
+	..\..\scintilla\win32\LexGAP.obj \
 	..\..\scintilla\win32\LexGui4Cli.obj \
 	..\..\scintilla\win32\LexHaskell.obj \
 	..\..\scintilla\win32\LexHTML.obj \
@@ -157,7 +155,9 @@ LEXOBJS=\
 	..\..\scintilla\win32\LexPascal.obj \
 	..\..\scintilla\win32\LexPB.obj \
 	..\..\scintilla\win32\LexPerl.obj \
+	..\..\scintilla\win32\LexPLM.obj \
 	..\..\scintilla\win32\LexPOV.obj \
+	..\..\scintilla\win32\LexProgress.obj \
 	..\..\scintilla\win32\LexPS.obj \
 	..\..\scintilla\win32\LexPython.obj \
 	..\..\scintilla\win32\LexRebol.obj \
@@ -196,6 +196,7 @@ OBJSSTATIC=\
 	..\..\scintilla\win32\CellBuffer.obj \
 	..\..\scintilla\win32\ContractionState.obj \
 	..\..\scintilla\win32\CharClassify.obj \
+	..\..\scintilla\win32\Decoration.obj \
 	..\..\scintilla\win32\Document.obj \
 	..\..\scintilla\win32\DocumentAccessor.obj \
 	..\..\scintilla\win32\Editor.obj \
@@ -205,8 +206,10 @@ OBJSSTATIC=\
 	..\..\scintilla\win32\KeyWords.obj \
 	..\..\scintilla\win32\LineMarker.obj \
 	..\..\scintilla\win32\PlatWin.obj \
+	..\..\scintilla\win32\PositionCache.obj \
 	..\..\scintilla\win32\PropSet.obj \
 	..\..\scintilla\win32\RESearch.obj \
+	..\..\scintilla\win32\RunStyles.obj \
 	..\..\scintilla\win32\ScintillaBaseL.obj \
 	..\..\scintilla\win32\ScintillaWinL.obj \
 	..\..\scintilla\win32\Style.obj \
@@ -228,10 +231,11 @@ $(DIR_BIN)\csound.properties $(DIR_BIN)\css.properties $(DIR_BIN)\d.properties \
 $(DIR_BIN)\eiffel.properties $(DIR_BIN)\erlang.properties \
 $(DIR_BIN)\escript.properties $(DIR_BIN)\flagship.properties \
 $(DIR_BIN)\forth.properties $(DIR_BIN)\fortran.properties \
-$(DIR_BIN)\freebasic.properties $(DIR_BIN)\html.properties \
-$(DIR_BIN)\inno.properties $(DIR_BIN)\kix.properties \
-$(DIR_BIN)\latex.properties $(DIR_BIN)\lisp.properties \
-$(DIR_BIN)\lot.properties $(DIR_BIN)\lout.properties $(DIR_BIN)\lua.properties \
+$(DIR_BIN)\freebasic.properties $(DIR_BIN)\gap.properties \
+$(DIR_BIN)\html.properties $(DIR_BIN)\inno.properties \
+$(DIR_BIN)\kix.properties $(DIR_BIN)\latex.properties \
+$(DIR_BIN)\lisp.properties $(DIR_BIN)\lot.properties \
+$(DIR_BIN)\lout.properties $(DIR_BIN)\lua.properties \
 $(DIR_BIN)\matlab.properties $(DIR_BIN)\metapost.properties \
 $(DIR_BIN)\mmixal.properties $(DIR_BIN)\nncrontab.properties \
 $(DIR_BIN)\nsis.properties $(DIR_BIN)\opal.properties \
@@ -249,39 +253,18 @@ $(DIR_BIN)\vhdl.properties $(DIR_BIN)\yaml.properties
 PROPS=$(DIR_BIN)\SciTEGlobal.properties $(DIR_BIN)\abbrev.properties $(LEXPROPS)
 
 !IFNDEF NO_LUA
-
-!IFDEF LUA51
-
 LUA_CORE_OBJS = lapi.obj lcode.obj ldebug.obj ldo.obj ldump.obj lfunc.obj lgc.obj llex.obj \
-    lmem.obj lobject.obj lopcodes.obj lparser.obj lstate.obj lstring.obj \
-    ltable.obj ltm.obj lundump.obj lvm.obj lzio.obj
-
-LUA_LIB_OBJS =  lauxlib.obj lbaselib.obj ldblib.obj liolib.obj lmathlib.obj ltablib.obj \
-    lstrlib.obj loadlib.obj loslib.obj linit.obj lbitlib.obj
-
-LUA_OBJS = LuaExtension51.obj IFaceTable.obj SingleThreadExtension.obj $(LUA_CORE_OBJS) $(LUA_LIB_OBJS)
-
-OBJS = $(OBJS) $(LUA_OBJS)
-OBJSSTATIC = $(OBJSSTATIC) $(LUA_OBJS)
-INCLUDEDIRS = $(INCLUDEDIRS) -I../lua51/include -I../lua51/src
-
-!ELSE
-
-LUA_CORE_OBJS = lapi.obj lcode.obj ldebug.obj ldo.obj ldump.obj lfunc.obj lgc.obj llex.obj \
-		lmem.obj lobject.obj lopcodes.obj lparser.obj lstate.obj lstring.obj \
-		ltable.obj ltm.obj lundump.obj lvm.obj lzio.obj
+                lmem.obj lobject.obj lopcodes.obj lparser.obj lstate.obj lstring.obj \
+                ltable.obj ltm.obj lundump.obj lvm.obj lzio.obj
 
 LUA_LIB_OBJS =	lauxlib.obj lbaselib.obj ldblib.obj liolib.obj lmathlib.obj ltablib.obj \
-                lstrlib.obj loadlib.obj
+                lstrlib.obj loadlib.obj loslib.obj linit.obj
 
 LUA_OBJS = LuaExtension.obj IFaceTable.obj SingleThreadExtension.obj $(LUA_CORE_OBJS) $(LUA_LIB_OBJS)
 
 OBJS = $(OBJS) $(LUA_OBJS)
 OBJSSTATIC = $(OBJSSTATIC) $(LUA_OBJS)
 INCLUDEDIRS = $(INCLUDEDIRS) -I../lua/include
-
-!ENDIF
-
 !ELSE
 CXXFLAGS=$(CXXFLAGS) -DNO_LUA
 !ENDIF
@@ -353,6 +336,8 @@ $(DIR_BIN)\fortran.properties:	..\src\fortran.properties
 	copy ..\src\fortran.properties $@
 $(DIR_BIN)\freebasic.properties:	..\src\freebasic.properties
 	copy ..\src\freebasic.properties $@
+$(DIR_BIN)\gap.properties:	..\src\gap.properties
+	copy ..\src\gap.properties $@
 $(DIR_BIN)\html.properties:	..\src\html.properties
 	copy ..\src\html.properties $@
 $(DIR_BIN)\inno.properties:	..\src\inno.properties
@@ -466,17 +451,10 @@ $(PROGSTATIC): $(OBJSSTATIC) $(LEXOBJS) Sc1Res.res
 {.}.cxx.obj:
 	$(CC) $(CXXFLAGS) -c $<
 
-!IFDEF LUA51
-{..\lua51\src}.c.obj:
-	$(CC) $(CCFLAGS) -c $<
-{..\lua51\src\lib}.c.obj:
-	$(CC) $(CCFLAGS) -c $<
-!ELSE
 {..\lua\src}.c.obj:
 	$(CC) $(CCFLAGS) -c $<
 {..\lua\src\lib}.c.obj:
 	$(CC) $(CCFLAGS) -c $<
-!ENDIF
 
 Sc1.obj: SciTEWin.cxx
 	$(CC) $(CXXFLAGS) -DSTATIC_BUILD -c $(NAME)$@ SciTEWin.cxx
@@ -674,19 +652,6 @@ Utf8_16.obj: \
 	../src/Utf8_16.h
 
 !IFNDEF NO_LUA
-!IFDEF LUA51
-LuaExtension51.obj: \
-	../src/LuaExtension51.cxx \
-	../src/LuaExtension.h \
-	../src/Extender.h \
-	../src/SciTEKeys.h \
-	../src/IFaceTable.h \
-	../../scintilla/include/Platform.h \
-	../../scintilla/include/SString.h \
-	../../scintilla/include/PropSet.h \
-	../../scintilla/include/Accessor.h \
-	../../scintilla/include/Scintilla.h
-!ELSE
 LuaExtension.obj: \
 	../src/LuaExtension.cxx \
 	../src/LuaExtension.h \
@@ -698,7 +663,6 @@ LuaExtension.obj: \
 	../../scintilla/include/PropSet.h \
 	../../scintilla/include/Accessor.h \
 	../../scintilla/include/Scintilla.h
-!ENDIF
 
 IFaceTable.obj: \
 	../src/IFaceTable.cxx \

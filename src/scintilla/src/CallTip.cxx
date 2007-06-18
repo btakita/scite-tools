@@ -12,6 +12,11 @@
 
 #include "Scintilla.h"
 #include "CallTip.h"
+#include <stdio.h>
+
+#ifdef SCI_NAMESPACE
+using namespace Scintilla;
+#endif
 
 static const int insetX = 5;    // text inset in x from calltip border
 static const int widthArrow = 14;
@@ -172,6 +177,7 @@ int CallTip::PaintContents(Surface *surfaceWindow, bool draw) {
 	char *chunkVal = val;
 	bool moreChunks = true;
 	int maxWidth = 0;
+
 	while (moreChunks) {
 		char *chunkEnd = strchr(chunkVal, '\n');
 		if (chunkEnd == NULL) {
@@ -219,6 +225,8 @@ void CallTip::PaintCT(Surface *surfaceWindow) {
 	offsetMain = insetX;    // initial alignment assuming no arrows
 	PaintContents(surfaceWindow, true);
 
+#ifndef __APPLE__
+	// OSX doesn't put borders on "help tags"
 	// Draw a raised border around the edges of the window
 	surfaceWindow->MoveTo(0, rcClientSize.bottom - 1);
 	surfaceWindow->PenColour(colourShade.allocated);
@@ -227,6 +235,7 @@ void CallTip::PaintCT(Surface *surfaceWindow) {
 	surfaceWindow->PenColour(colourLight.allocated);
 	surfaceWindow->LineTo(0, 0);
 	surfaceWindow->LineTo(0, rcClientSize.bottom - 1);
+#endif
 }
 
 void CallTip::MouseClick(Point pt) {

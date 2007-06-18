@@ -509,9 +509,14 @@ protected:
 	static gint DividerRelease(GtkWidget *widget, GdkEventButton *event, SciTEGTK *scitew);
 	static void DragDataReceived(GtkWidget *widget, GdkDragContext *context,
 	                             gint x, gint y, GtkSelectionData *selection_data, guint info, guint time, SciTEGTK *scitew);
+
 	gint TabBarRelease(GtkNotebook *notebook, GdkEventButton *event);
+	gint TabBarScroll(GdkEventScroll *event);
 	static gint TabBarReleaseSignal(GtkNotebook *notebook, GdkEventButton *event, SciTEGTK *scitew) {
 		return scitew->TabBarRelease(notebook, event);
+	}
+	static gint TabBarScrollSignal(GtkNotebook *, GdkEventScroll *event, SciTEGTK *scitew) {
+		return scitew->TabBarScroll(event);
 	}
 
 #if GTK_MAJOR_VERSION >= 2
@@ -1669,6 +1674,7 @@ int xsystem(const char *s, const char *resultsFile) {
 		dup(fh);
 		close(2);
 		dup(fh);
+		setpgid(0, 0);
 		execlp("/bin/sh", "sh", "-c", s, static_cast<char *>(NULL));
 		exit(127);
 	}
@@ -1740,7 +1746,7 @@ void SciTEGTK::Execute() {
 
 void SciTEGTK::StopExecute() {
 	if (!triedKill && pidShell) {
-		kill(pidShell, SIGKILL);
+		kill(-pidShell, SIGKILL);
 		triedKill = true;
 	}
 }
@@ -2258,14 +2264,12 @@ gint SciTEGTK::Key(GdkEventKey *event) {
 	//printf("S-key: %d %x %x %x %x\n",event->keyval, event->state, GDK_SHIFT_MASK, GDK_CONTROL_MASK, GDK_F3);
 	int modifiers = event->state & (GDK_SHIFT_MASK | GDK_CONTROL_MASK | GDK_MOD1_MASK);
 
-	// added by Mitchell
 	int cmodifiers = // modifier mask for Lua extension
 		(event->state & GDK_SHIFT_MASK   ? SCMOD_SHIFT : 0) |
 		(event->state & GDK_CONTROL_MASK ? SCMOD_CTRL  : 0) |
 		(event->state & GDK_MOD1_MASK    ? SCMOD_ALT   : 0);
 	if (extender && extender->OnKey(event->keyval, cmodifiers))
 		return 1;
-	// end added by Mitchell
 
 	int commandID = 0;
 	for (int i = 0; kmap[i].msg; i++) {
@@ -2527,6 +2531,23 @@ gint SciTEGTK::TabBarRelease(GtkNotebook *notebook, GdkEventButton *event) {
 #endif
 	}
 	return FALSE;
+}
+
+gint SciTEGTK::TabBarScroll(GdkEventScroll *event) {
+	switch (event->direction) {
+		case GDK_SCROLL_RIGHT:
+		case GDK_SCROLL_DOWN:
+			Next();
+			WindowSetFocus(wEditor);
+			break;
+		case GDK_SCROLL_LEFT:
+		case GDK_SCROLL_UP:
+			Prev();
+			WindowSetFocus(wEditor);
+			break;
+	}
+	// Return true because Next() or Prev() already switches the tab
+	return TRUE;
 }
 
 GtkWidget *SciTEGTK::pixmap_new(GtkWidget *window, gchar **xpm) {
@@ -3065,6 +3086,8 @@ void SciTEGTK::CreateUI() {
 	gtk_box_pack_start(GTK_BOX(boxMain),PWidget(wTabBar),FALSE,FALSE,0);
 	gtk_signal_connect(GTK_OBJECT(PWidget(wTabBar)),
 		"button-release-event", GTK_SIGNAL_FUNC(TabBarReleaseSignal), gthis);
+	g_signal_connect(GTK_OBJECT(PWidget(wTabBar)),
+		"scroll-event", GTK_SIGNAL_FUNC(TabBarScrollSignal), gthis);
 	//gtk_notebook_set_scrollable(GTK_NOTEBOOK(PWidget(wTabBar)), TRUE);
 #endif
 	tabVisible = false;

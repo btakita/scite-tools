@@ -24,6 +24,7 @@
 #include "SVector.h"
 #include "SplitVector.h"
 #include "Partitioning.h"
+#include "RunStyles.h"
 #include "CellBuffer.h"
 #include "CallTip.h"
 #include "KeyMap.h"
@@ -34,9 +35,15 @@
 #include "ViewStyle.h"
 #include "AutoComplete.h"
 #include "CharClassify.h"
+#include "Decoration.h"
 #include "Document.h"
+#include "PositionCache.h"
 #include "Editor.h"
 #include "ScintillaBase.h"
+
+#ifdef SCI_NAMESPACE
+using namespace Scintilla;
+#endif
 
 ScintillaBase::ScintillaBase() {
 	displayPopupMenu = true;
@@ -717,17 +724,6 @@ sptr_t ScintillaBase::WndProc(unsigned int iMessage, uptr_t wParam, sptr_t lPara
 	case SCI_SETLEXERLANGUAGE:
 		SetLexerLanguage(reinterpret_cast<const char *>(lParam));
 		break;
-
-	case SCI_GETLEXERLANGUAGE: {
-			const char *val = lexCurrent->languageName;
-			const int n = strlen(val);
-			if (lParam != 0) {
-				char *ptr = reinterpret_cast<char *>(lParam);
-				memcpy(ptr, val, n);
-				ptr[n] = '\0'; // terminate
-			}
-			return n;
-		}
 
 	case SCI_GETSTYLEBITSNEEDED:
 		return lexCurrent ? lexCurrent->GetStyleBitsNeeded() : 5;

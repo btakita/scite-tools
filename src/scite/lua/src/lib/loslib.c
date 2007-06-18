@@ -1,5 +1,5 @@
 /*
-** $Id: loslib.c,v 1.20 2006/09/19 13:57:08 roberto Exp $
+** $Id: loslib.c,v 1.1 2007/06/15 00:37:58 nyamatongwe Exp $
 ** Standard Operating System library
 ** See Copyright Notice in lua.h
 */

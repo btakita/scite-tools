@@ -60,7 +60,7 @@
 #include "SciTEBase.h"
 
 const char recentFileName[] = "SciTE.recent";
-const char defaultSessionFileName[] = "SciTE.ses";
+const char defaultSessionFileName[] = "SciTE.session";
 
 Job::Job() {
 	Clear();
@@ -231,31 +231,7 @@ void SciTEBase::SetDocumentAt(int index, bool updateStack) {
 	Buffer bufferNext = buffers.buffers[buffers.Current()];
 	SetFileName(bufferNext);
 	SendEditor(SCI_SETDOCPOINTER, 0, GetDocumentAt(buffers.Current()));
-	SetWindowName();
-	ReadProperties();
-	if (CurrentBuffer()->unicodeMode != uni8Bit) {
-		// Override the code page if Unicode
-		codePage = SC_CP_UTF8;
-		SendEditor(SCI_SETCODEPAGE, codePage);
-	}
-	isReadOnly = SendEditor(SCI_GETREADONLY);
-
-	// check to see whether there is saved fold state, restore
-	bufferNext.foldState.BeginIteration();
-	// Platform::DebugPrintf("Restoring fold state... (%d states)", count);
-
-	int line = 0;
-	bool folded = false;
-	while (bufferNext.foldState.GetState(&line, &folded)) {
-		bool expanded = SendEditor(SCI_GETFOLDEXPANDED, line);
-		// set line to state folded
-		if (folded && !expanded) {
-			SendEditor(SCI_TOGGLEFOLD, line);
-		}
-		if (!folded && expanded) {
-			SendEditor(SCI_TOGGLEFOLD, line);
-		}
-	}
+	RestoreState(bufferNext);
 
 #if PLAT_WIN
 	// Tab Bar
@@ -293,14 +269,13 @@ void SciTEBase::UpdateBuffersCurrent() {
 		int foldPoints = 0;
 
 		for (int line = 0; line < maxLine; line++) {
-			int level = SendEditor(SCI_GETFOLDLEVEL, line);
-			if (level & SC_FOLDLEVELHEADERFLAG) {
-
-				foldPoints ++;
+			if ((SendEditor(SCI_GETFOLDLEVEL, line) & SC_FOLDLEVELHEADERFLAG) &&
+				!SendEditor(SCI_GETFOLDEXPANDED, line)) {
+				foldPoints++;
 			}
 		}
 
-		FoldState* f = &buffers.buffers[currentbuf].foldState;
+		FoldState *f = &buffers.buffers[currentbuf].foldState;
 		f->Clear();
 
 		if (foldPoints > 0) {
@@ -309,11 +284,9 @@ void SciTEBase::UpdateBuffersCurrent() {
 			f->Alloc(foldPoints);
 
 			for (int line = 0; line < maxLine; line++) {
-				int level = SendEditor(SCI_GETFOLDLEVEL, line);
-				if (level & SC_FOLDLEVELHEADERFLAG) {
-
-					bool expanded = SendEditor(SCI_GETFOLDEXPANDED, line);
-					f->PushState(line, expanded);
+				if ((SendEditor(SCI_GETFOLDLEVEL, line) & SC_FOLDLEVELHEADERFLAG) &&
+					!SendEditor(SCI_GETFOLDEXPANDED, line)) {
+					f->Append(line);
 				}
 			}
 		}
@@ -422,6 +395,14 @@ void SciTEBase::SaveRecentStack() {
 	fclose(recentFile);
 }
 
+static SString SessionPropKey(int bufIndex, const char *bufKey) {
+	SString pKey = "buffer.";
+	pKey += SString(bufIndex + 1);
+	pKey += ".";
+	pKey += bufKey;
+	return pKey;
+}
+
 void SciTEBase::LoadSession(const char *sessionName) {
 	FilePath sessionPathName;
 	if (sessionName[0] == '\0') {
@@ -429,28 +410,64 @@ void SciTEBase::LoadSession(const char *sessionName) {
 	} else {
 		sessionPathName.Set(sessionName);
 	}
-	FILE *sessionFile = sessionPathName.Open(fileRead);
-	if (!sessionFile)
+
+	PropSetFile propsSession;
+	if (!propsSession.Read(sessionPathName, sessionPathName.Directory(), NULL, 0))
 		return;
+
 	// comment next line if you don't want to close all buffers before loading session
 	CloseAllBuffers(true);
-	int curr = -1, pos = 0;
-	char *file, line[MAX_PATH + 128];
+
+	int curr = -1;
 	for (int i = 0; i < bufferMax; i++) {
-		if (!fgets(line, sizeof (line), sessionFile))
-			break;
-		line[strcspn(line, "\r\n")] = '\0';	// Remove \r, \n, or \r\n.
-		if (sscanf(line, "<pos=%i>", &pos) != 1)
-			break;
-		file = strchr(line, '>') + 2;
-		//Platform::DebugPrintf("pos=%i file=:%s:", pos, file);
-		if (pos < 0) {
+		SString propKey = SessionPropKey(i, "path");
+		SString propStr = propsSession.Get(propKey.c_str());
+		if (propStr == "")
+			continue;
+
+		propKey = SessionPropKey(i, "position");
+		int pos = propsSession.GetInt(propKey.c_str());
+
+		AddFileToBuffer(propStr.c_str(), pos - 1);
+
+		propKey = SessionPropKey(i, "current");
+		if (propsSession.GetInt(propKey.c_str()))
 			curr = i;
-			pos = -pos;
+
+		if (props.GetInt("session.bookmarks")) {
+			propKey = SessionPropKey(i, "bookmarks");
+			propStr = propsSession.Get(propKey.c_str());
+			if (propStr.length()) {
+				char *buf = new char[propStr.length() + 1];
+				strcpy(buf, propStr.c_str());
+				char *p = strtok(buf, ",");
+				while (p != NULL) {
+					int line = atoi(p) - 1;
+					SendEditor(SCI_MARKERADD, line, markerBookmark);
+					p = strtok(NULL, ",");
+				}
+				delete []buf;
+			}
 		}
-		AddFileToBuffer(file, pos - 1);
+
+		if (props.GetInt("fold") && !props.GetInt("fold.on.open") &&
+			props.GetInt("session.folds")) {
+			propKey = SessionPropKey(i, "folds");
+			propStr = propsSession.Get(propKey.c_str());
+			if (propStr.length()) {
+				SendEditor(SCI_COLOURISE, 0, -1);
+				char *buf = new char[propStr.length() + 1];
+				strcpy(buf, propStr.c_str());
+				char *p = strtok(buf, ",");
+				while (p != NULL) {
+					int line = atoi(p) - 1;
+					SendEditor(SCI_TOGGLEFOLD, line);
+					p = strtok(NULL, ",");
+				}
+				delete [] buf;
+			}
+		}
 	}
-	fclose(sessionFile);
 
 	FilePath sessionFilePath = FilePath(sessionPathName).AbsolutePath();
 	// add/update SessionPath environment variable
@@ -470,15 +487,58 @@ void SciTEBase::SaveSession(const char *sessionName) {
 	FILE *sessionFile = sessionPathName.Open(fileWrite);
 	if (!sessionFile)
 		return;
+
+	fprintf(sessionFile, "# SciTE session file\n");
 	int curr = buffers.Current();
 	for (int i = 0; i < buffers.length; i++) {
 		if (buffers.buffers[i].IsSet() && !buffers.buffers[i].IsUntitled()) {
-			int pos;
+			SString propKey = SessionPropKey(i, "path");
+			fprintf(sessionFile, "\n%s=%s\n", propKey.c_str(), buffers.buffers[i].AsInternal());
+
 			SetDocumentAt(i);
-			pos = SendEditor(SCI_GETCURRENTPOS) + 1;
-			if (i == curr)
-				pos = -pos;
-			fprintf(sessionFile, "<pos=%i> %s\n", pos, buffers.buffers[i].AsInternal());
+			int pos = SendEditor(SCI_GETCURRENTPOS) + 1;
+			propKey = SessionPropKey(i, "position");
+			fprintf(sessionFile, "%s=%d\n", propKey.c_str(), pos);
+
+			if (i == curr) {
+				propKey = SessionPropKey(i, "current");
+				fprintf(sessionFile, "%s=1\n", propKey.c_str());
+			}
+
+			if (props.GetInt("session.bookmarks")) {
+				int line = -1;
+				bool found = false;
+				while ((line = SendEditor(SCI_MARKERNEXT, line + 1, 1 << markerBookmark)) >= 0) {
+					if (!found) {
+						propKey = SessionPropKey(i, "bookmarks");
+						fprintf(sessionFile, "%s=%d", propKey.c_str(), line + 1);
+						found = true;
+					} else {
+						fprintf(sessionFile, ",%d", line + 1);
+					}
+				}
+				if (found)
+					fprintf(sessionFile, "\n");
+			}
+
+			if (props.GetInt("fold") && props.GetInt("session.folds")) {
+				int maxLine = SendEditor(SCI_GETLINECOUNT);
+				bool found = false;
+				for (int line = 0; line < maxLine; line++) {
+					if ((SendEditor(SCI_GETFOLDLEVEL, line) & SC_FOLDLEVELHEADERFLAG) &&
+						!SendEditor(SCI_GETFOLDEXPANDED, line)) {
+						if (!found) {
+							propKey = SessionPropKey(i, "folds");
+							fprintf(sessionFile, "%s=%d", propKey.c_str(), line + 1);
+						found = true;
+					} else {
+							fprintf(sessionFile, ",%d", line + 1);
+						}
+					}
+				}
+				if (found)
+					fprintf(sessionFile, "\n");
+			}
 		}
 	}
 	fclose(sessionFile);
@@ -571,8 +631,28 @@ void SciTEBase::New() {
 		extender->InitBuffer(buffers.Current());
 }
 
+void SciTEBase::RestoreState(const Buffer &buffer) {
+	SetWindowName();
+	ReadProperties();
+	if (CurrentBuffer()->unicodeMode != uni8Bit) {
+		// Override the code page if Unicode
+		codePage = SC_CP_UTF8;
+		SendEditor(SCI_SETCODEPAGE, codePage);
+	}
+	isReadOnly = SendEditor(SCI_GETREADONLY);
+
+	// check to see whether there is saved fold state, restore
+	for (int fold = 0; fold < buffer.foldState.Folds(); fold++) {
+		SendEditor(SCI_TOGGLEFOLD, buffer.foldState.Line(fold));
+	}
+}
+
 void SciTEBase::Close(bool updateUI, bool loadingSession, bool makingRoomForNew) {
 	bool closingLast = false;
+
+	if (extender) {
+		extender->OnClose(filePath.AsFileSystem());
+	}
 
 	if (buffers.size == 1) {
 		// With no buffer list, Close means close from MRU
@@ -610,31 +690,7 @@ void SciTEBase::Close(bool updateUI, bool loadingSession, bool makingRoomForNew)
 			ClearDocument();
 		}
 		if (updateUI) {
-			SetWindowName();
-			ReadProperties();
-			if (CurrentBuffer()->unicodeMode != uni8Bit) {
-				// Override the code page if Unicode
-				codePage = SC_CP_UTF8;
-				SendEditor(SCI_SETCODEPAGE, codePage);
-			}
-			isReadOnly = SendEditor(SCI_GETREADONLY);
-
-			// check to see whether there is saved fold state, restore
-			bufferNext.foldState.BeginIteration();
-
-			int line = 0;
-			bool folded = false;
-			while (bufferNext.foldState.GetState(&line, &folded)) {
-				bool expanded = SendEditor(SCI_GETFOLDEXPANDED, line);
-				// set line to state folded
-				if (folded && !expanded) {
-					SendEditor(SCI_TOGGLEFOLD, line);
-				}
-				if (!folded && expanded) {
-					SendEditor(SCI_TOGGLEFOLD, line);
-				}
-			}
-
+			RestoreState(bufferNext);
 			DisplayAround(bufferNext);
 		}
 	}
