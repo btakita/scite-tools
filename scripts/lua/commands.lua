@@ -7,23 +7,32 @@
 
   Permission to use, copy, modify, and distribute this file
   is granted, provided credit is given to Mitchell.
-
-  Commands for the Lua "bundle"
 ]]--
 
--- regexes for auto 'end' completion
-Lua.regexes = {
+---
+-- Commands for the lua module.
+module('modules.lua.commands', package.seeall)
+
+---
+-- Patterns for auto 'end' completion for control structures.
+-- @class table
+-- @name control_structure_patterns
+-- @see try_to_autocomplete_end
+local control_structure_patterns = {
   '^%s*for', '^%s*function', '^%s*if', '^%s*repeat', '^%s*while',
   'function%s*%(.*%)%s*$', '^%s*local%s*function'
 }
 
--- autocomplete 'end' for if, while, for, etc.
-function Lua.try_to_autocomplete_end()
+---
+-- Try to autocomplete Lua's 'end' keyword for control structures
+-- like 'if', 'while', 'for', etc.
+-- @see control_structure_patterns
+function try_to_autocomplete_end()
   editor:BeginUndoAction()
   editor:LineEnd() editor:NewLine()
   local line_num = editor:LineFromPosition(editor.CurrentPos)
   local line = editor:GetLine(line_num - 1)
-  for _, regex in ipairs(Lua.regexes) do
+  for _, regex in ipairs(control_structure_patterns) do
     if string.find(line, regex) then
       local indent = editor.LineIndentation[line_num - 1]
       if string.find(regex, 'repeat') then
@@ -40,27 +49,39 @@ function Lua.try_to_autocomplete_end()
   editor:EndUndoAction()
 end
 
--- goto file being 'require'd
-function Lua.goto_required()
+---
+-- Determine the Lua file being 'require'd, and search through
+-- the LUA_PATH for that file and open it in SciTE.
+function goto_required()
   local line = editor:GetLine(
     editor:LineFromPosition(editor.CurrentPos) )
-  local _, _, _, filename = string.find(line,
-    '^.*require%s*([\'"])(.-)%1.*$')
+  local patterns = {
+    'require[%s]*(%b())',
+    'require[%s]*(([\'"])[^%2]+%2)'
+  }
+  local file
+  for _, patt in ipairs(patterns) do
+    _, _, file = string.find(line, patt)
+    if file then break end
+  end
+  file = loadstring('return '..file)()
   for path in string.gfind(LUA_PATH..';', '(.-);') do
-    path = string.gsub(path, '?', filename)
+    path = string.gsub(path, '?', file)
     local f = io.open(path)
     if f then f:close() scite.Open(path) break end
   end
 end
 
 -- Lua-specific key commands
+local keys = _G.keys
 if type(keys) == 'table' then
+  local m_functions = modules.scite.functions
   keys[SCLEX_LUA].ac = {
     f = {
-      l = { Functions.show,      'function' },
-      a = { Functions.show_args, 'function' },
+      l = { m_functions.show,      'function' },
+      a = { m_functions.show_args, 'function' },
     },
-    g = { Lua.goto_required }
+    g = { goto_required }
   }
-  keys[SCLEX_LUA]['s\n'] = { Lua.try_to_autocomplete_end }
+  keys[SCLEX_LUA]['s\n'] = { try_to_autocomplete_end }
 end

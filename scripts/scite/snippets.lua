@@ -7,31 +7,33 @@
 
   Permission to use, copy, modify, and distribute this file
   is granted, provided credit is given to Mitchell.
+
   Documentation can be found in scripts/scite/snippets_doc.txt
-
-  To use this, add
-    require 'path_to_snippets.lua'
-  to your lua startup script
-
-  API (see functions for descriptions):
-    - Snippets.insert( [snippet_text] )
-    - Snippets.cancel_current
-    - Snippets.list
-    - Snippets.show_scope (if scopes enabled)
-    - Snippets.insert_temporary (linux only)
 ]]--
 
-snippets = {} -- main container
-snippets.none = {}
-snippets.none.file = "$(FileNameExt)"
-snippets.none.path = "$(FilePath)"
-snippets.none.tab  = "\${${1:1}:${2:default}}"
-snippets.none.key  = "['${1:}'] = { ${2:func}${3:, ${4:arg}} }"
+---
+-- Provides Textmate-like snippets for the scite module.
+-- There are several option variables used:
+--   PLATFORM: OS platform (linux or windows).
+--   MARK_SNIPPET: The integer mark used to identify the line that
+--     marks the end of a snippet.
+--   SCOPES_ENABLED: Flag indicating whether scopes/styles can be
+--     used for snippets.
+--   FILE_IN: Location of the temporary file used as STDIN for
+--     regex mirrors.
+--   FILE_OUT: Location of the temporary file that will contain
+--     output for regex mirrors.
+--   REDIRECT: The command line symbol used for redirecting STDOUT
+--     to a file.
+--   RUBY_CMD: The command that executes the Ruby interpreter.
+--   MARK_SNIPPET_COLOR: The Scintilla color used for the line
+--     that marks the end of the snippet.
+module('modules.scite.snippets', package.seeall)
 
 -- options
+local PLATFORM = _G.PLATFORM or 'linux'
 local MARK_SNIPPET   = 4
 local SCOPES_ENABLED = true
-local PLATFORM = PLATFORM or 'linux'
 local FILE_IN, FILE_OUT, REDIRECT, RUBY_CMD, MARK_SNIPPET_COLOR
 if PLATFORM == 'linux' then
   FILE_IN  = '/tmp/scite_input'
@@ -50,21 +52,45 @@ local DEBUG = false
 local RUN_TESTS = false
 -- end options
 
+---
+-- Global container that holds all snippet definitions.
+-- @class table
+-- @name snippets
+_G.snippets = {}
+
+-- some default snippets
+_G.snippets.none = {}
+_G.snippets.none.file = "$(FileNameExt)"
+_G.snippets.none.path = "$(FilePath)"
+_G.snippets.none.tab  = "\${${1:1}:${2:default}}"
+_G.snippets.none.key  = "['${1:}'] = { ${2:func}${3:, ${4:arg}} }"
+
+---
+-- [Local table] The current snippet.
+-- @class table
+-- @name snippet
 local snippet = {}
+
+---
+-- [Local table] The stack of currently running snippets.
+-- @class table
+-- @name snippet_stack
 local snippet_stack = {}
-local lexers  = {}
+
 -- local functions
 local next_snippet_item
 local snippet_text, match_indention, join_lines, load_scopes
 local escape, unescape, remove_escapes, _DEBUG
 
-Snippets = {}
-
--- expand snippet using last word or argument as trigger
-function Snippets.insert(...)
+---
+-- Begins expansion of a snippet.
+-- @param snippet_arg Optional snippet to expand. If none is
+--   specified, the snippet is determined from the trigger word
+--   to the left of the caret, the lexer, and scope.
+function insert(snippet_arg)
   local orig_pos, new_pos, tname
   props['SelectedText'] = editor:GetSelText()
-  if not arg[1] then
+  if not snippet_arg then
     orig_pos = editor.CurrentPos editor:WordLeftExtend()
     new_pos  = editor.CurrentPos
     tname    = editor:GetSelText()
@@ -80,15 +106,15 @@ function Snippets.insert(...)
   if tname then
     _DEBUG('tname: '..tname..', scope: '..scope)
     if SCOPES_ENABLED then
-      pcall( function() tpl = snippets[scope][tname] end )
+      pcall( function() tpl = _G.snippets[scope][tname] end )
       if not tpl then
-        pcall( function() tpl = snippets.none[tname] end )
+        pcall( function() tpl = _G.snippets.none[tname] end )
       end
     else
-      pcall( function() tpl = snippets[tname] end )
+      pcall( function() tpl = _G.snippets[tname] end )
     end
   else
-    tpl = arg[1]
+    tpl = snippet_arg
   end
 
   editor:BeginUndoAction()
@@ -167,7 +193,9 @@ function Snippets.insert(...)
   next_snippet_item()
 end
 
--- mirror previous snippet items, then goto next one
+---
+-- [Local function] Mirror or transform most recently modified
+-- field in the current snippet and move on to the next field.
 next_snippet_item = function()
   if not snippet.index then return end
   local tpl_start, tpl_end, tpl_text = snippet_text()
@@ -176,7 +204,7 @@ next_snippet_item = function()
   -- 'messed up' (e.g. by undo/redo commands)
   if not tpl_text then
     --_DEBUG('no end marker...cancelling')
-    Snippets.cancel_current()
+    cancel_current()
     return
   end
 
@@ -315,8 +343,10 @@ next_snippet_item = function()
   editor:EndUndoAction()
 end
 
--- cancels active snippet
-function Snippets.cancel_current()
+---
+-- Cancels active snippet, reverting to the state before the
+-- snippet was activated.
+function cancel_current()
   if not snippet.index then return end
   local tpl_start, tpl_end, _ = snippet_text()
   if tpl_start and tpl_end then
@@ -336,64 +366,11 @@ function Snippets.cancel_current()
   end
 end
 
--- get snippet text
-snippet_text = function()
-  local s = snippet.start_pos
-  local e = editor:PositionFromLine(
-    editor:MarkerLineFromHandle(snippet.end_marker) ) - 1
-  if e < s then return nil, nil, nil end -- error
-  return s, e, editor:textrange(s, e)
-end
-
--- escaping characters
-escape = function(text)
-  return string.gsub(text, '\\([$/}`])',
-    function(char)
-      return string.format( "\\%03d", string.byte(char) )
-    end)
-end
-
--- unescaping characters
-unescape = function(text)
-  return string.gsub(text, '\\(%d%d%d)',
-    function(value)
-      return '\\'..string.char(value)
-    end)
-end
-
--- remove escape characters
-remove_escapes = function(text)
-  return string.gsub(text, '\\([$/}`])', '%1')
-end
-
--- match new lines' indentation with previous line as reference
-match_indention = function(ref_line, num_lines)
-  if num_lines == 0 then return end
-  local isize = editor.Indent
-  local ibase = editor.LineIndentation[ref_line]
-  local inum  = ibase / isize -- num of indents needed to match
-  local line = ref_line + 1
-  for i = 0, num_lines - 1 do
-    local linei = editor.LineIndentation[line + i]
-    editor.LineIndentation[line + i] = linei + isize * inum
-  end
-end
-
--- joins current line with bottom, eliminating whitespace
-join_lines = function()
-  editor:LineDown() editor:VCHome()
-  if editor.Column[editor.CurrentPos] == 0 then
-    editor:VCHome()
-  end
-  editor:HomeExtend()
-  if string.len( editor:GetSelText() ) > 0 then
-    editor:DeleteBack()
-  end
-  editor:DeleteBack()
-end
-
--- list global snippets and snippets in current scope
-function Snippets.list()
+---
+-- List available snippet triggers as an autocompletion list.
+-- Global snippets and snippets in the current lexer and scope
+-- are used.
+function list()
   local list, list_str = {}, ''
 
   function add_snippets(tpls)
@@ -419,69 +396,105 @@ function Snippets.list()
   editor:AutoCShow(0, list_str)
 end
 
--- loads scopes from scintilla.iface
-load_scopes = function()
-  local path = props['SciteDefaultHome']..
-    '/scripts/utils/lex_scopes.txt'
-  local f = io.open(path)
-  if f then
-    lexers = { current = nil }
-    local lexer_constants = {}
-    local regex  = '^val%s(SCLEX_%w+)=(%d+)%s*$'
-    local regex2 = '^lex%s%w+=([%w_]+)%s([%w_]+)%s*$'
-    local regex3
-    for line in f:lines() do
-      if string.find(line, regex) then -- lex defs
-        local _, _, name, index = string.find(line, regex)
-        lexers[ tonumber(index) ] = { name = name, scopes = {} }
-        lexer_constants[name] = tonumber(index)
-      elseif string.find(line, regex2) then -- lex scopes
-        local _, _, name, prefix = string.find(line, regex2)
-        if lexers[ lexer_constants[name] ] then
-          -- for lexers with multiple languages, keep the same
-          -- parent (eg SCLEX_HTML contains HTML, XML, PHP, etc.)
-          if not ( regex3 and string.find(regex3, prefix) ) then
-            lexers.current = lexer_constants[name]
-          end
-        end
-        regex3 = '^val%s('..prefix..'[%w_]+)=(%d+)%s*$'
-      elseif regex3 and string.find(line, regex3) then -- scope
-        local _, _, name, value = string.find(line, regex3)
-        lexers[lexers.current].scopes[ tonumber(value) ] = name
-      end
-    end
-    f:close()
-  else
-    print('Warning: "'..path..'" does not exist.'..
-      'Snippets.show_scope will not function properly.')
-  end
-end
-
-if SCOPES_ENABLED then load_scopes() end
-
--- display scope at cursor pos in a calltip
-function Snippets.show_scope()
+---
+-- Show the scope/style at the current caret position as a calltip.
+function show_scope()
   if not SCOPES_ENABLED then print('Scopes disabled') return end
   local lexer = editor.Lexer
   local scope = editor.StyleAt[editor.CurrentPos]
-  local text  = 'Lexer: '..lexers[lexer].name..' ('..lexer..')'..
-    '\nScope: '..lexers[lexer].scopes[scope]..' ('..scope..')'
+  local text = 'Lexer: '..lexer..'\nScope: '..scope
   editor:CallTipShow(editor.CurrentPos, text)
 end
 
--- requests the user to enter a temporary snippet to insert
-function Snippets.insert_temporary()
+---
+-- Display an inputdialog prompting a temporary snippet to insert.
+function insert_temporary()
   if PLATFORM ~= 'linux' then print('Linux only') return end
   local text = inputdialog('Insert Temporary Snippet', 'Text:')
-  if text then Snippets.insert(text) end
+  if text then insert(text) end
 end
 
--- print text for debugging
+---
+-- [Local function] Gets the text of the snippet.
+-- This is the text bounded by the start of the trigger word to
+-- the end snippet marker on the line after the snippet's end.
+snippet_text = function()
+  local s = snippet.start_pos
+  local e = editor:PositionFromLine(
+    editor:MarkerLineFromHandle(snippet.end_marker) ) - 1
+  if e < s then return nil, nil, nil end -- error
+  return s, e, editor:textrange(s, e)
+end
+
+---
+-- [Local function] Replace escaped snippet characters with their
+-- octal equivalents.
+escape = function(text)
+  return string.gsub(text, '\\([$/}`])',
+    function(char)
+      return string.format( "\\%03d", string.byte(char) )
+    end)
+end
+
+---
+-- [Local function] Replace octal snippet characters with their
+-- escaped equivalents.
+unescape = function(text)
+  return string.gsub(text, '\\(%d%d%d)',
+    function(value)
+      return '\\'..string.char(value)
+    end)
+end
+
+---
+-- [Local function] Remove escaping forward-slashes from escaped
+-- snippet characters.
+-- At this point, they are no longer necessary.
+remove_escapes = function(text)
+  return string.gsub(text, '\\([$/}`])', '%1')
+end
+
+---
+-- [Local function] When snippets are inserted, match their
+-- indentation level with their surroundings.
+match_indention = function(ref_line, num_lines)
+  if num_lines == 0 then return end
+  local isize = editor.Indent
+  local ibase = editor.LineIndentation[ref_line]
+  local inum  = ibase / isize -- num of indents needed to match
+  local line = ref_line + 1
+  for i = 0, num_lines - 1 do
+    local linei = editor.LineIndentation[line + i]
+    editor.LineIndentation[line + i] = linei + isize * inum
+  end
+end
+
+---
+-- [Local function] Joins current line with the line below it,
+-- eliminating whitespace.
+-- This is used to remove the empty line containing the end of
+-- snippet marker.
+join_lines = function()
+  editor:LineDown() editor:VCHome()
+  if editor.Column[editor.CurrentPos] == 0 then
+    editor:VCHome()
+  end
+  editor:HomeExtend()
+  if string.len( editor:GetSelText() ) > 0 then
+    editor:DeleteBack()
+  end
+  editor:DeleteBack()
+end
+
+---
+-- [Local function] Called for printing debug text if DEBUG flag
+-- is set.
+-- @param text Debug text to print.
 _DEBUG = function(text) if DEBUG then print('---\n'..text) end end
 
 -- run tests
 if RUN_TESTS then
-  function Snippets.next_item() next_snippet_item() end
+  function next_item() next_snippet_item() end
   LUA_PATH = LUA_PATH or props['SciteDefaultHome']..'/scripts/'
   require 'utils/test_snippets'
 end

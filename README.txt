@@ -11,137 +11,78 @@ these files provided credit is given to Mitchell.
 
 Check CHANGELOG.txt for recent updates
 
-Repository Structure
---------------------
+Repository Structure:
+  / contains my Lua startup script and custom properties files.
+  scripts/ contains a multitude of Lua scripts as modules.
+  src/ contains customized Scintilla/SciTE code (as of v1.74).
 
-Source Code:
-
-  / contains my Lua startup script and custom properties files
-    that constitute a darker-theme for the Lexers I use:
-      Bash, C/C++, CSS, default, HTML/XML, Java, Lua, Perl, PHP,
-      Python, Ruby, and YAML.
-
-  src/ contains customized Scintilla/SciTE code (as of v1.73)
-    Linux and Windows customizations:
-      AutoCSeparator is '|', not '?'
-      Calltip colors match dark color scheme
-      Added OnKey, scite.MenuCommand, scite.UpdateStatusBar,
-        scite.BufferPath, scite.SwitchToBuffer, and
-        scite.GetClipboardText Lua Extension functions
-      Max of 100 commands on the Tools menu (instead of 50)
-      Literal newlines ('\n') can be used in api files
-      Lua 5.0 or Lua 5.1 as the extension language
-    Linux only customizations:
-      inputdialog() Lua Extension function
-
-  scripts/ contains a multitude of Lua scripts (or modules as
-    sometimes referred to in the documentation) in "bundles".
-
+Installation:
   All of these files should go into the SciteDefaultHome
-  directory, generally located:
+  directory, typically located:
     Linux   - /usr/share/scite
     Windows - c:\Program Files\SciTE\
+  Note in Linux if you change the directory, you must also change
+  the SYSCONF_PATH in src/scite/gtk/makefile and recompile.
 
-Binaries:
-  Platform-specific custom binaries are located here:
-    http://code.google.com/p/scite-tools/downloads/list
-  Download the newest appropriate archive, unpack it, and move
-  its contents into the SciteDefaultHome directory mentioned
-  above. (Binaries with '51' in their name use Lua 5.1 as the
-  extension language.)
+  Binaries:
+    Platform-specific, custom binaries are located here:
+      http://code.google.com/p/scite-tools/downloads/list
+    Download the newest appropriate archive, unpack it, and move
+    its contents into the SciteDefaultHome directory mentioned
+    above.
 
-Usage Notes
------------
+Customizations:
+  scintilla/
+    * AutoCSeparator is '|', not '?'.
+    * Calltip colors match dark color scheme.
+    * Removed some default key commands:
+      Ctrl+L, Ctrl+Shift+L, Ctrl+T, Ctrl+Shift+T, Ctrl+D,
+      Ctrl+U, Ctrl+Shift+U.
+  scite/
+    * Added new Lua Extension functions:
+      - scite.BufferPath([int] index)
+        Returns the name of the buffer specified by index.
+      - scite.SwitchToBuffer([int] index)
+        Switches to the buffer specified by index.
+      - scite.GetClipboardText()
+        Returns the contents of the clipboard.
+      - inputdialog(title, label [, default_text])
+        [Linux only] Prompts the user to enter text into a dialog
+        and returns it.
+    * Implemented Lua Extension functions:
+      - OnMacro(cmd, msg)
+        cmd is either 'macro:startrecord', 'macro:record', or
+        'macro:stoprecord' and msg is a ';' separated list of
+        args that can be passed to scite.SendEditor.
+    * Max of 100 commands on the Tools menu (instead of 50).
+    * Literal newlines ('\n') can be used in api files.
+    * 'caret.fore' property also applies to output pane.
 
-IMPORTANT:
+Usage Notes:
   I run SciTE in Linux, so if you are running in Windows and use
   extension.lua, you must change the PLATFORM variable in it to
   'windows'. This will ensure all platform-specific operations will
-  be executed correctly. Also some of these functions rely on the
-  Ruby programming language. Get it at http://ruby-lang.org
+  be executed correctly. If you are not using extension.lua, define
+  a global PLATFORM variable with 'windows' as its value.
 
-  Be sure to take a look at all scripts/*.lua files and change any
-  platform-specific options that apply to your platform (if
-  necessary). If you are using extension.lua, you do not have to
-  reset any PLATFORM variables, as they are inherited from
-  extension.lua
+  Generally all platform-specific options are set properly for your
+  platform based on PLATFORM, which does not need to be redefined
+  in every script because its local value is inherited from the
+  global value, but if unexpected problems occur, be sure to
+  re-check those options.
 
-  By default, the repository assumes you are running the custom
-  SciTE binary (see note about Binaries above). Some of the modules
-  (including the key command manager) rely on the additional Lua
-  Extension functions provided by the custom binary as well.
+  Some Lua scripts (in particular snippets.lua) utilize the Ruby
+  programming language. If it is not installed on your system, you
+  can get it from http://ruby-lang.org.
 
-  Oh, and if you are using the custom binary and key commands are
-  not working as you would expect, check key_commands.lua (in 
-  scripts/scite/) and make sure the ALTERNATIVE_KEYS flag is set
-  to false. I generally forget to reset the flag when I commit.
-
-Additional Lua Extension Functions:
-  OnKey([int] keyval, [bool] control, [bool] shift, [bool] alt)
-    Upon a keypress in SciTE, this function will be called if
-    available. The control, shift, and alt parameters are the
-    modifiers to keyval. Typically string.char(keyval) will
-    return the character associated with the key pressed, but
-    this is not always the case in Windows. I have found no
-    workaround yet.
-  scite.MenuCommand([int] SCI_CONST)
-    The list of SCI_CONSTs available is in SciTE.h. The number is
-    required as the constant names are unavailable. This function
-    calls the corresponding SciTE menu command (new, open, etc.)
-  scite.UpdateStatusBar([bool] bUpdateSlowData=false)
-    Updates SciTE's statusbar text. Set bUpdateSlowData to true
-    if you want to update "slow" data like file permissions,
-    current time, etc.
-  scite.BufferPath([int] index)
-    Returns the name of the buffer specified by index
-  scite.SwitchToBuffer([int] index)
-    Switches to the buffer specified by index
-  scite.GetClipboardText()
-    Returns the contents of the clipboard
-
-  Note: an example of how to use BufferPath and SwitchToBuffer is
-    located in scripts/scite/CDialog.lua
-
-Compiling SciTE with Lua 5.1
-  Lua 5.1 support is still in testing phase. I have experienced
-  no abnormalities with my scripts, but that doesn't mean bugs
-  do not exist. Despite some of the big changes in Lua 5.1 dealing
-  with changes in the language, most of the compatibility options
-  have been turned on.
-  Compatibilities:
-    - table.getn still works, but the '#' operator should be used
-    - Lua 5.0's varargs are still available
-    - Lua 5.0's math.mod is still available, as well as 5.1's
-      math.fmod
-    - Lua 5.0's string.gfind is still available, as well as 5.1's
-      string.gmatch
-    - [C API] Lua 5.0's luaL_openlib behavior is still available
-  Changes:
-    - table.setn was deprecated
-    - loadlib was moved into the package table (package.loadlib)
-    - Lua 5.0's long string nesting throws an error
-
-  In order to compile with Lua 5.1 (Lua 5.0 is used by default),
-  build SciTE normally, but enabling the LUA51 flag.
-    e.g. in Linux: 'make LUA51=1'
-         in windows: 'nmake -f scite.mak LUA51=1'
-  Note: I have not enabled this option in the mingw makefile for
-  win32 because I have no means to test it. Patches are welcome.
-
-  For clarity, the executables have been renamed SciTE51 and
-  SciTE51.exe and do not overwrite existing SciTE and SciTE.exe
-  binaries.
-
-Linux Version Notes:
-  Because I don't have any experience with Windows resource files,
-  the inputdialog() Lua function only works in Linux.
-  Syntax:
-    result = inputdialog(title, label [, default_text])
-  Description:
-    The user is prompted to enter text into an input dialog, and
-    that text is returned by the function.
+  If key commands are not working expected, check key_commands.lua
+  (in scripts/scite/) and make sure the ALTERNATIVE_KEYS flag is
+  set to false. I occasionally forget to reset the flag when I
+  commit.
 
 Additional Documentation:
-  Documentation for snippets usage is in scripts/snippets_doc.txt.
-  Documentation for keys.lua usage is in scripts/key_doc.txt.
-  Each of my Lua modules has documentation for every function
+  * Snippets and key commands documentation can be found in
+    scripts/doc/.
+  * Each of the Lua modules has inline documentation for every
+    function and the LuaDocs can be found at:
+    - http://caladbolg.net/scite/luadoc/scripts/index.html

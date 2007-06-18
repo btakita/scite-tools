@@ -7,12 +7,16 @@
 
   Permission to use, copy, modify, and distribute this file
   is granted, provided credit is given to Mitchell.
-
-  Snippets for the PHP "bundle"
 ]]--
 
--- load HTML snippets too
+---
+-- Snippets for the php module.
+module('modules.php.snippets', package.seeall)
+
+-- load HTML snippets and commands too
 dofile( props['SciteDefaultHome']..'/scripts/html/html.lua' )
+
+local snippets = _G.snippets
 
 snippets.none.php = "<?php ${0} ?>"
 snippets[SCE_HPHP_DEFAULT] = {

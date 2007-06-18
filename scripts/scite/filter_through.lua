@@ -8,7 +8,7 @@
   Permission to use, copy, modify, and distribute this file
   is granted, provided credit is given to Mitchell.
 
-  Textmate-like "filter through" command for the SciTE "bundle"
+  Textmate-like "filter through" command for the scite module.
 
   Linux-only, uses inputdialog function (custom binary only),
   text options instead of a dialog

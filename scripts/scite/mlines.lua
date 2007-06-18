@@ -7,22 +7,21 @@
 
   Permission to use, copy, modify, and distribute this file
   is granted, provided credit is given to Mitchell.
-
-  Multiple line editing for the SciTE "bundle"
-
-  API (see functions for descriptions):
-    - MLines.add
-    - MLines.add_multiple
-    - MLines.clear
-    - MLines.update
 ]]--
 
+---
+-- Multiple line editing for the scite module.
+-- There are several option variables used:
+--   PLATFORM: OS platform (linux or windows).
+--   MARK_MLINE: The integer mark used to identify an MLine marked
+--     line.
+--   MARK_MLINE_COLOR: The Scintilla color used for an MLine marked
+--     line.
+module('modules.scite.mlines', package.seeall)
+
 -- options
+local PLATFORM = _G.PLATFORM or 'linux'
 local MARK_MLINE = 2
-local mlines = {}
-local mlines_count = 0
-local mlines_most_recent
-local PLATFORM = PLATFORM or 'linux'
 local MARK_MLINE_COLOR
 if PLATFORM == 'linux' then
   MARK_MLINE_COLOR = tonumber("0x4D994D")
@@ -31,10 +30,20 @@ elseif PLATFORM == 'windows' then
 end
 -- end options
 
-MLines = {}
+---
+-- [Local table] Contains all MLine marked lines with the column
+-- index to edit with respect to for each specific line.
+-- @class table
+-- @name mlines
+local mlines = {}
 
--- adds mline marker on current line
-function MLines.add()
+local mlines_count = 0
+local mlines_most_recent
+
+---
+-- Adds an mline marker to the current line and stores the line
+-- number and column position of the caret in the mlines table.
+function add()
   editor:MarkerSetBack(MARK_MLINE, MARK_MLINE_COLOR)
   local column = editor.Column[editor.CurrentPos]
   local line = editor:LineFromPosition(editor.CurrentPos)
@@ -44,9 +53,12 @@ function MLines.add()
   mlines_count = mlines_count + 1
 end
 
--- adds set of mline markers between most recently added line
--- and current line (using current column on current line)
-function MLines.add_multiple()
+---
+-- Adds mline markers to all lines from the most recently added
+-- line to the current line.
+-- The mlines table is updated as in add(), but all column
+-- positions are the same as the current column caret position.
+function add_multiple()
   if mlines_count > 0 then
     local line = editor:LineFromPosition(editor.CurrentPos)
     local column = editor.Column[editor.CurrentPos]
@@ -65,16 +77,20 @@ function MLines.add_multiple()
   end
 end
 
--- clears all mline markers
-function MLines.clear()
+---
+-- Clears all mline markers and the mlines table.
+function clear()
   editor:MarkerDeleteAll(MARK_MLINE)
   mlines = {}
   mlines_count = 0
   mlines_most_recent = nil
 end
 
--- applies changes in current line to all lines being edited
-function MLines.update()
+---
+-- Applies changes made in the current line relative to the caret
+-- column position stored initially to all lines with mline
+-- markers in relation to their initial column positions.
+function update()
   local curr_line = editor:LineFromPosition(editor.CurrentPos)
   local curr_col  = editor.Column[editor.CurrentPos]
   if mlines[curr_line] then

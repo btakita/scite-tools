@@ -1,6 +1,6 @@
 -- Test suite for snippets.lua
 
-snippets = {}
+local snippets = _G.snippets
 snippets.none = {}
 snippets.none.tabs = "${3:three} ${1:one} ${2:two}"
 snippets.none.etabs = "${2:one ${1:two} ${3:three}} ${4:four}"
@@ -13,6 +13,8 @@ snippets.none.esc = "\\${1:fake one} ${1:real one} {${2:\\} two}"
 snippets.none.eruby = "${1:one} ${1/.+/#{$0.capitalize}/}"
 
 function test_snippets()
+  local editor = _G.editor
+  local Snippets = modules.scite.snippets
 
   -- Tab stops
   editor:ClearAll()

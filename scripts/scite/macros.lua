@@ -7,59 +7,78 @@
 
   Permission to use, copy, modify, and distribute this file
   is granted, provided credit is given to Mitchell.
-
-  Provides macro recording and playback for the SciTE 'bundle'
-  (custom binary only)
-
-  API (see functions for descriptions):
-    - Macros.play( [macro_name] )
-    - Macros.save
-    - Macros.load
-  Note OnMacro is part of the SciTE Lua Extension in custom binary
 ]]--
+
+---
+-- (Linux only) Macro recording and playback for the scite module.
+-- This module requires utils/completion.rb.
+-- There is one option variable used:
+--   MACRO_FILENAME: The location of the file to save and load
+--     macros from.
+module('modules.scite.macros', package.seeall)
 
 local MACRO_FILENAME =
   props['SciteDefaultHome']..'/saved_macros.lua'
 
-Macros = { list = {}, current = {}, recording = false }
+---
+-- [Local table] All available macros indexed by name.
+-- @class table
+-- @name list
+local list = {}
 
--- called whenever a macro notification is received
--- upon macro:startrecord notification, new macro table is
--- initialized and filled as macro:record notifications and
--- messages are received
-function OnMacro(cmd, msg)
+---
+-- [Local table] The current macro being recorded.
+-- Contains an ordered list of actions.
+-- @class table
+-- @name list
+local current = {}
+
+local recording = false
+
+---
+-- SciTE OnMacro Lua extension function.
+-- It is called whenever a macro notification is received.
+-- If a macro:startrecord notification is received, a new macro
+-- table is created and filled as macro:record notifications and
+-- messages are received. When macro:stoprecord is received,
+-- an inputdialog is displayed prompting a name for the recorded
+-- macro. The macro is then saved to MACRO_FILENAME.
+function _G.OnMacro(cmd, msg)
   if cmd == 'macro:startrecord' then
-    Macros.current = {}
-    Macros.recording = true
+    current = {}
+    recording = true
     props['Macro'] = 'Macro Recording'
     scite.UpdateStatusBar()
   elseif cmd == 'macro:record' then
-    table.insert(Macros.current, msg)
+    table.insert(current, msg)
   elseif cmd == 'macro:stoprecord' then
-    if Macros.recording then
+    if recording then
       local macro_name = inputdialog('Save Macro', 'Macro Name:')
       if macro_name and macro_name ~= '' then
-        Macros.list[macro_name] = Macros.current
-        Macros.save()
+        list[macro_name] = current
+        save()
       end
-      Macros.recording = false
+      recording = false
       props['Macro'] = ''
       scite.UpdateStatusBar()
     end
   end
 end
 
--- displays a completion dialog of currently stored macros
--- and runs the selected macro or macro passed as parameter
-function Macros.play(...)
+---
+-- Runs the specified macro.
+-- @param macro_name Optional name of a macro to play. If this is
+--   not specified, a completion dialog of currently stored macros
+--   is displayed for user selection.
+function play(macro_name)
   local macro
-  if not arg[1] then
-    macro = CDialog.choose_key(Macros.list, 'Macros', true)
+  if not macro_name then
+    macro = CDialog.choose_key(list, 'Macros', true)
   else
-    macro = Macros.list[ arg[1] ]
+    macro = list[macro_name]
   end
   if macro then
-    macro = Macros.list[macro]
+    macro = list[macro]
     for _, msg in ipairs(macro) do
       local _, _, cmd, arg1, arg2 =
         string.find(msg, '(.-);(.-);(.-);')
@@ -68,10 +87,11 @@ function Macros.play(...)
   end
 end
 
--- save recorded macros to file
-function Macros.save()
+---
+-- Save recorded macros to MACRO_FILENAME.
+function save()
   local f = assert( io.open(MACRO_FILENAME, 'w') )
-  for name, macro in pairs(Macros.list) do
+  for name, macro in pairs(list) do
     f:write(name, '\n')
     for _, cmd in ipairs(macro) do f:write(cmd, '\n') end
     f:write('\n')
@@ -79,8 +99,9 @@ function Macros.save()
   f:close()
 end
 
--- loads recorded macros from file
-function Macros.load()
+---
+-- Load recorded macros from MACRO_FILENAME.
+function load()
   local f = io.open(MACRO_FILENAME, 'r')
   if f then
     local name, current_macro
@@ -90,7 +111,7 @@ function Macros.load()
         current_macro = {}
       else
         if line == '' then -- finished, save current macro
-          Macros.list[name] = current_macro
+          list[name] = current_macro
           name = nil
         else
           table.insert(current_macro, line)
@@ -101,4 +122,4 @@ function Macros.load()
   end
 end
 
-Macros.load() -- load saved macros
+load() -- load saved macros

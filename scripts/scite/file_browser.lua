@@ -7,23 +7,27 @@
 
   Permission to use, copy, modify, and distribute this file
   is granted, provided credit is given to Mitchell.
-
-  Filesystem browser for the SciTE "bundle"
-
-  This file browser uses a tree-view like structure with
-  indentation instead of the +'s and -'s.
-
-  root/
-    directory/
-      file1.txt
-    file2.txt
-    file3.txt
-
-  API (see functions for descriptions):
-    - FileBrowser.create
-    - FileBrowser.action
-    - FileBrowser.show_file_details
 ]]--
+
+---
+-- Filesystem browser for the scite module.
+-- It uses a tree-view like structure with indentation instead of
+-- fold markers.
+-- There are several option variables used:
+--   PLATFORM: OS platform (linux or windows).
+--   LS_CMD: The command to list files and directories one line at
+--     a time (directories having an appended slash to them).
+--   LSD_CMD: The command to list details of files and directories.
+--   REDIRECT1: The command line symbol used for redirecting STDOUT
+--     to a file.
+--   REDIRECT2: The command line symbol used for redirecting STDERR
+--     to a file.
+--   FILE_OUT: Location of the temporary file that will contain
+--     output for various operations.
+--   LINE_END: The line end character for the specific PLATFORM.
+--   DIR_SEP: The character that separates directories for the
+--     specific PLATFORM.
+module('modules.scite.filebrowser', package.seeall)
 
 -- platform-specific options
 local PLATFORM = _G.PLATFORM or 'linux'
@@ -47,7 +51,7 @@ elseif PLATFORM == 'windows' then
   FILE_OUT  = os.getenv('TEMP')..'\\scite_output.txt'
   ROOT      = 'C:\\'
   LINE_END  = '\r\n'
-  DIR_SEP    = '\\'
+  DIR_SEP   = '\\'
 end
 -- end options
 
@@ -55,11 +59,13 @@ end
 local get_line, get_sel_or_line, get_dir_contents, get_abs_path
 local is_dir, dir_is_open, open_dir, close_dir
 
-FileBrowser = {}
-
--- displays directory structure of either the (absolute path)
--- directory stated on the current line or the root directory
-function FileBrowser.create()
+---
+-- Displays the directory structure.
+-- The root directory of the structure displayed is determined
+-- by selected text or the contents of the current line. If a
+-- directory is specified, it is assumed to be an absolute path.
+-- If none is specified, the ROOT directory is displayed.
+function create()
   local root_dir = get_sel_or_line()
   if root_dir ~= '' then
     if string.sub( root_dir, string.len(root_dir) ) ~= DIR_SEP then
@@ -72,12 +78,14 @@ function FileBrowser.create()
   editor:GotoLine(2)
 end
 
--- if the item on the current line is a closed directory,
--- open it and list its contents (indented)
--- if the item is an open directory, close it, removing its
--- contents from the screen
--- if the item is a file, open it in SciTE
-function FileBrowser.action()
+---
+-- Performs an intelligent file browser action.
+-- If the item on the current line is a closed directory, it
+-- is 'opened', and all of its contents are displayed with an
+-- additional level of indentation. If the item is an open
+-- directory, it is 'closed', and its contents are hidden. If
+-- the item is a file, it is opened in SciTE.
+function action()
   if editor:GetLine(0) ~= 'File Browser - '..ROOT..LINE_END then
     return
   end
@@ -101,8 +109,10 @@ function FileBrowser.action()
   end
 end
 
--- retrieve details on a file and display them in a calltip
-function FileBrowser.show_file_details()
+---
+-- Retrieves details about a file or directory and displays it in
+-- a calltip.
+function show_file_details()
   if editor:GetLine(0) ~= 'File Browser - '..ROOT..LINE_END then
     return
   end
@@ -153,19 +163,25 @@ function FileBrowser.show_file_details()
   editor:CallTipShow(editor.CurrentPos, out)
 end
 
--- returns text on current line
+---
+-- [Local function] Returns the text on the current line.
 get_line = function()
   editor:Home() editor:LineEndExtend()
   return editor:GetSelText()
 end
 
--- returns selection or text on current line
+---
+-- [Local function] Returns the current selection or the text on
+-- the current line.
 get_sel_or_line = function()
   if editor:GetSelText() == '' then return get_line() end
   return editor:GetSelText()
 end
 
--- returns contents of a directory
+---
+-- [Local function] Returns the contents of a directory.
+-- @param abs_path The absolute path of the directory to get the
+--   contents of.
 get_dir_contents = function(abs_path)
   os.execute(LS_CMD..abs_path..REDIRECT1..FILE_OUT..REDIRECT2)
   local f = io.open(FILE_OUT)
@@ -186,8 +202,17 @@ get_dir_contents = function(abs_path)
   return out
 end
 
--- returns absolute path of a given file or directory by finding
--- changes in indentation
+---
+-- [Local function] Returns the absolute path of the file or
+-- directory on the current line.
+-- It does this by iterating up lines, noting any changes in
+-- indentation. If one is found, that is a directory name and
+-- prepends it to the absolute path. It does this until it
+-- reaches the root level. At this point this is the absolute
+-- path of the file or directory and it is returned.
+-- @param item The name of the file or directory on the current
+--   line.
+-- @param line_num The line number item is on.
 get_abs_path = function(item, line_num)
   local indentation = editor.LineIndentation[line_num]
   if indentation == 0 then return '"'..ROOT..item..'"' end
@@ -206,18 +231,32 @@ get_abs_path = function(item, line_num)
   return '"'..ROOT..abs_path..'"'
 end
 
--- returns whether the item in question is a directory or not
+---
+-- [Local function] Determines if the item in question is a
+-- directory or not.
+-- The list commands make sure directories are specified with
+-- a DIR_SEP at the end, so this is a simple check.
+-- @param item The name of the file or directory in question.
 is_dir = function(item)
   return string.sub( item, string.len(item) ) == DIR_SEP
 end
 
--- returns whether the directory is open or not
+---
+-- [Local function] Determines if the specified directory is open
+-- or not.
+-- Open directories have indented files and directories below
+-- the line they are on.
+-- @param line_num The line number of the directory in question.
 dir_is_open = function(line_num)
   local indentation = editor.LineIndentation[line_num]
   return editor.LineIndentation[line_num + 1] > indentation
 end
 
--- opens directory and displays its contents
+---
+-- [Local function] Opens a closed directory and displays its
+-- contents below in an additional level of indentation.
+-- @param abs_path The absolute path of the directory to open.
+-- @param line_num The line number the directory is on.
 open_dir = function(abs_path, line_num)
   local contents = get_dir_contents(abs_path)
   local pos = editor:PositionFromLine(line_num + 1)
@@ -229,7 +268,12 @@ open_dir = function(abs_path, line_num)
   end
 end
 
--- closes directory, hiding its contents
+---
+-- [Local function] Closes an open directory, hiding its contents.
+-- All lines with indentation levels higher than the directory's
+-- indentation level are removed.
+-- @param abs_path The absolute path of the directory to close.
+-- @param line_num The line number the directory is on.
 close_dir = function(abs_path, line_num)
   local indentation = editor.LineIndentation[line_num]
   local last_line

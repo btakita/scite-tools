@@ -7,12 +7,20 @@
 
   Permission to use, copy, modify, and distribute this file
   is granted, provided credit is given to Mitchell.
-
-  PHP "bundle" loader
 ]]--
 
-PHP = {}
-if type(keys) == 'table' then keys[SCLEX_HTML] = {} end
+---
+-- The php module.
+-- It provides utilities for editing PHP code.
+module('modules.php', package.seeall)
+
+if type(keys) == 'table' then
+  ---
+  -- Container for PHP-specific key commands.
+  -- @class table
+  -- @name keys.php
+  keys[SCLEX_HTML] = {}
+end
 
 require 'php/snippets'
 require 'php/commands'

@@ -7,11 +7,13 @@
 
   Permission to use, copy, modify, and distribute this file
   is granted, provided credit is given to Mitchell.
-
-  Snippets for the Ruby "bundle"
 ]]--
 
-if not snippets then snippets = {} end
+---
+-- Snippets for the ruby module.
+module('modules.ruby.snippets', package.seeall)
+
+if not _G.snippets then _G.snippets = {} end
 
 snippets[SCE_RB_DEFAULT] = {
   rb   = "#!`which ruby`",

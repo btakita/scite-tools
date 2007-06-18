@@ -1,3 +1,7 @@
+18.06.07
+  - upgraded to SciTE 1.74
+  - upgraded scripts/ to Lua 5.1 counterparts in SciTE-st branch
+
 01.04.07
   - upgraded to SciTE 1.73
 

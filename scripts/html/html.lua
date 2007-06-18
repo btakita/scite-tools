@@ -7,12 +7,20 @@
 
   Permission to use, copy, modify, and distribute this file
   is granted, provided credit is given to Mitchell.
-
-  HTML "bundle" loader
 ]]--
 
-HTML = {}
-if type(keys) == 'table' then keys[SCLEX_HTML] = {} end
+---
+-- The html module.
+-- It provides utilities for editing HTML.
+module('modules.html', package.seeall)
+
+if type(keys) == 'table' then
+  ---
+  -- Container for HTML-specific key commands.
+  -- @class table
+  -- @name keys.html
+  keys[SCLEX_HTML] = {}
+end
 
 require 'html/snippets'
 require 'html/commands'

@@ -7,24 +7,40 @@
 
   Permission to use, copy, modify, and distribute this file
   is granted, provided credit is given to Mitchell.
-
-  Ruby "bundle" loader
 ]]--
 
--- for matching enclosures
+---
+-- The ruby module.
+-- It provides utilities for editing Ruby code.
+module('modules.ruby', package.seeall)
+
+---
+-- [Local table] Character matching.
+-- @class table
+-- @name char_matches
 local char_matches = {
   ['('] = ')', ['['] = ']', ['{'] = '}',
   ["'"] = "'", ['"'] = '"', ['|'] = '|'
 }
 
-function OnChar(c)
-  if char_matches[c] then -- match enclosure chars
+---
+-- SciTE OnChar Lua extension function.
+-- Matches characters specified in char_matches if the editor pane
+-- has focus.
+-- This overrides the Editing module's OnChar function.
+function _G.OnChar(c)
+  if char_matches[c] and editor.Focus then -- match enclosure chars
     editor:InsertText( editor.CurrentPos, char_matches[c] )
   end
 end
 
-Ruby = {}
-if type(keys) == 'table' then keys[SCLEX_RUBY] = {} end
+if type(keys) == 'table' then
+  ---
+  -- Container for Ruby-specific key commands.
+  -- @class table
+  -- @name keys.ruby
+  keys[SCLEX_RUBY] = {}
+end
 
 require 'ruby/snippets'
 require 'ruby/commands'

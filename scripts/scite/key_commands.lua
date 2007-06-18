@@ -16,7 +16,7 @@
   in LUA_PATH.
 ]]--
 
-local PLATFORM = PLATFORM or 'linux'
+local PLATFORM = _G.PLATFORM or 'linux'
 local ALTERNATIVE_KEYS = false
 
 --[[
@@ -68,76 +68,75 @@ keys['ca8'] = { 1117 }
 keys['ca9'] = { 1118 }
 keys['ca0'] = { 1119 }
 
--- macros
 -- snippets
-keys.ci   = { Snippets.insert           }
-keys.csi  = { Snippets.cancel_current   }
-keys.cai  = { Snippets.list             }
-keys.csai = { Snippets.insert_temporary }
-keys.ai   = { Snippets.show_scope       }
+local m_snippets = modules.scite.snippets
+keys.ci   = { m_snippets.insert           }
+keys.csi  = { m_snippets.cancel_current   }
+keys.cai  = { m_snippets.list             }
+keys.csai = { m_snippets.insert_temporary }
+keys.ai   = { m_snippets.show_scope       }
 -- keys.? = { 1120 }, -- create snippets
 
 -- editing...
-keys.ck  = { Editing.smart_cutcopy, 'cut'   }
-keys.csk = { Editing.smart_cutcopy, 'copy'  }
-keys.cu  = { Editing.smart_paste,           }
-keys.au  = { Editing.smart_paste, 'cycle'   }
-keys.sau = { Editing.smart_paste, 'reverse' }
-keys.cw  = { Editing.current_word, 'delete' }
-keys.ct  = { Editing.transpose_chars        }
-keys.csh = { Editing.squeeze,               }
-keys.cj  = { Editing.join_lines             }
-keys.ap  = { Editing.move_line, 'up'        }
-keys.an  = { Editing.move_line, 'down'      }
-
--- code execution
-keys.cae = {
-  r = { Editing.ruby_exec },
-  l = { Editing.lua_exec  }
+local m_editing = modules.scite.editing
+keys.ck  = { m_editing.smart_cutcopy, 'cut'   }
+keys.csk = { m_editing.smart_cutcopy, 'copy'  }
+keys.cu  = { m_editing.smart_paste,           }
+keys.au  = { m_editing.smart_paste, 'cycle'   }
+keys.sau = { m_editing.smart_paste, 'reverse' }
+keys.cw  = { m_editing.current_word, 'delete' }
+keys.ct  = { m_editing.transpose_chars        }
+keys.csh = { m_editing.squeeze,               }
+keys.cj  = { m_editing.join_lines             }
+keys.ap  = { m_editing.move_line, 'up'        }
+keys.an  = { m_editing.move_line, 'down'      }
+keys.cae = { -- code execution
+  r = { m_editing.ruby_exec },
+  l = { m_editing.lua_exec  }
 }
-
--- enclose in...
-keys.ae = {
-  t      = { Editing.enclose, 'tag'        },
-  st     = { Editing.enclose, 'single_tag' },
-  ['s"'] = { Editing.enclose, 'dbl_quotes' },
-  ["'"]  = { Editing.enclose, 'sng_quotes' },
-  ['(']  = { Editing.enclose, 'parens'     },
-  ['[']  = { Editing.enclose, 'brackets'   },
-  ['{']  = { Editing.enclose, 'braces'     },
-  c      = { Editing.enclose, 'chars'      },
+keys.ae = { -- enclose in...
+  t      = { m_editing.enclose, 'tag'        },
+  st     = { m_editing.enclose, 'single_tag' },
+  ['s"'] = { m_editing.enclose, 'dbl_quotes' },
+  ["'"]  = { m_editing.enclose, 'sng_quotes' },
+  ['(']  = { m_editing.enclose, 'parens'     },
+  ['[']  = { m_editing.enclose, 'brackets'   },
+  ['{']  = { m_editing.enclose, 'braces'     },
+  c      = { m_editing.enclose, 'chars'      },
 }
-
--- select in...
-keys.as = {
-  e      = { Editing.select_enclosed               },
-  t      = { Editing.select_enclosed, 'tags'       },
-  ['s"'] = { Editing.select_enclosed, 'dbl_quotes' },
-  ["'"]  = { Editing.select_enclosed, 'sng_quotes' },
-  ['(']  = { Editing.select_enclosed, 'parens'     },
-  ['[']  = { Editing.select_enclosed, 'brackets'   },
-  ['{']  = { Editing.select_enclosed, 'braces'     },
-  w      = { Editing.current_word,    'select'     },
-  l      = { Editing.select_line                   },
-  p      = { Editing.select_paragraph              },
-  i      = { Editing.select_indented_block         },
-  s      = { Editing.select_scope                  },
+keys.as = { -- select in...
+  e      = { m_editing.select_enclosed               },
+  t      = { m_editing.select_enclosed, 'tags'       },
+  ['s"'] = { m_editing.select_enclosed, 'dbl_quotes' },
+  ["'"]  = { m_editing.select_enclosed, 'sng_quotes' },
+  ['(']  = { m_editing.select_enclosed, 'parens'     },
+  ['[']  = { m_editing.select_enclosed, 'brackets'   },
+  ['{']  = { m_editing.select_enclosed, 'braces'     },
+  w      = { m_editing.current_word,    'select'     },
+  l      = { m_editing.select_line                   },
+  p      = { m_editing.select_paragraph              },
+  i      = { m_editing.select_indented_block         },
+  s      = { m_editing.select_scope                  },
 }
 
 -- multiple lines...
+local m_mlines = modules.scite.mlines
 keys.am = {
-  a  = { MLines.add          },
-  sa = { MLines.add_multiple },
-  u  = { MLines.update       },
-  c  = { MLines.clear        },
+  a  = { m_mlines.add          },
+  sa = { m_mlines.add_multiple },
+  u  = { m_mlines.update       },
+  c  = { m_mlines.clear        },
 }
 
 -- file management...
+local m_filebrowser = modules.scite.filebrowser
 keys.caf = {
-  c = { FileBrowser.create            },
-  o = { FileBrowser.action            },
-  d = { FileBrowser.show_file_details },
+  c = { m_filebrowser.create            },
+  o = { m_filebrowser.action            },
+  d = { m_filebrowser.show_file_details },
 }
+
+local editor = _G.editor -- quicker access
 
 -- etc...
 keys['c\n'] = { function() editor:LineEnd() editor:NewLine() end }
@@ -245,12 +244,10 @@ end
 if PLATFORM == 'linux' then
   if ALTERNATIVE_KEYS then
     if not keys.cc then keys.cc = { e = {} } end
-    keys.cc.e.r = { Editing.reformat_paragraph }
-    keys.cc.e.f = { FilterThrough.filter       }
+    keys.cc.e.r = { m_editing.reformat_paragraph }
     keys.am.r   = { 311 } -- macro start record
     keys.am.s   = { 312 } -- macro stop record
-    keys.am.p   = { Macros.play }
+    keys.am.p   = { modules.scite.macros.play }
   end
-  -- keys['c;']  = { CDialog.get_command   }
-  keys['c\t'] = { CDialog.switch_buffer }
+  keys['c\t'] = { modules.scite.cdialog.switch_buffer }
 end

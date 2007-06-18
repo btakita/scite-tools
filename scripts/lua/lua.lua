@@ -7,12 +7,20 @@
 
   Permission to use, copy, modify, and distribute this file
   is granted, provided credit is given to Mitchell.
-
-  Lua "bundle" loader
 ]]--
 
-Lua = {}
-if type(keys) == 'table' then keys[SCLEX_LUA] = {} end
+---
+-- The lua module.
+-- It provides utilities for editing Lua code.
+module('modules.lua', package.seeall)
+
+if type(keys) == 'table' then
+  ---
+  -- Container for Lua-specific key commands.
+  -- @class table
+  -- @name keys.lua
+  keys[SCLEX_LUA] = {}
+end
 
 require 'lua/snippets'
 require 'lua/commands'

@@ -7,32 +7,25 @@
 
   Permission to use, copy, modify, and distribute this file
   is granted, provided credit is given to Mitchell.
-
-  Editing commands for the SciTE "bundle"
-
-  API (see functions for descriptions):
-    - Editing.smart_cutcopy(action=cut)
-    - Editing.smart_paste(action=paste)
-    - Editing.current_word(action=select)
-    - Editing.transpose_char
-    - Editing.squeeze(char)
-    - Editing.join_lines
-    - Editing.move_line
-    - Editing.enclose(enclosure)
-    - Editing.select_enclosed(enclosure)
-    - Editing.select_line
-    - Editing.select_paragraph
-    - Editing.select_indented_block
-    - Editing.select_scope
-    - Editing.ruby_exec
-    - Editing.lua_exec
-    - Editing.reformat_paragraph
-    - Editing.convert(what) [commented out]
-    - Editing.goto_ctag [commented out]
 ]]--
 
+---
+-- Editing commands for the scite module.
+-- There are several option variables used:
+--   PLATFORM: OS platform (linux or windows).
+--   FILE_IN: Location of the temporary file used as STDIN for
+--     various operations.
+--   FILE_OUT: Location of the temporary file that will contain
+--     output for various operations.
+--   REDIRECT: The command line symbol used for redirecting STDOUT
+--     to a file.
+--   RUBY_CMD: The command that executes the Ruby interpreter.
+--   FMTP_CMD: (Linux only) The command used for reformatting
+--     paragraphs.
+module('modules.scite.editing', package.seeall)
+
 -- platform specific options
-local PLATFORM = PLATFORM or 'linux'
+local PLATFORM = _G.PLATFORM or 'linux'
 local FILE_IN, FILE_OUT, REDIRECT, RUBY_CMD, FMTP_CMD
 if PLATFORM == 'linux' then
   FILE_IN  = '/tmp/scite_input'
@@ -48,17 +41,29 @@ elseif PLATFORM == 'windows' then
 end
 -- end options
 
--- for kill-ring
+---
+-- [Local table] The kill-ring.
+-- @class table
+-- @name kill_ring
+-- @field maxn The maximum size of the kill-ring.
 local kill_ring = { pos = 1, maxn = 10 }
 
--- for matching enclosures
+---
+-- [Local table] Character matching.
+-- Matches parentheses, brackets, braces, and quotes.
+-- @class table
+-- @name char_matches
 local char_matches = {
   ['('] = ')', ['['] = ']', ['{'] = '}',
   ["'"] = "'", ['"'] = '"'
 }
 
--- for enclosing text or selecting text in enclosures
--- note chars and tag enclosures are generated on the fly
+---
+-- [Local table] Enclosures for enclosing or selecting ranges
+-- of text.
+-- Note chars and tag enclosures are generated at runtime.
+-- @class table
+-- @name enclosure
 local enclosure = {
   dbl_quotes = { left = '"', right = '"' },
   sng_quotes = { left = "'", right = "'" },
@@ -71,22 +76,30 @@ local enclosure = {
   single_tag = { left = '<', right = ' />' }
 }
 
--- local functions
-local insert_into_kill_ring, scroll_kill_ring
-local get_preceding_number, get_sel_or_line
-
--- matches enclosure characters
-function OnChar(c)
-  if char_matches[c] then
+---
+-- SciTE Lua OnChar extension function.
+-- Matches characters specified in char_matches if the editor pane
+-- has focus.
+function _G.OnChar(c)
+  if char_matches[c] and editor.Focus then
     editor:InsertText( -1, char_matches[c] )
   end
 end
 
-Editing = {}
+-- local functions
+local insert_into_kill_ring, scroll_kill_ring
+local get_preceding_number, get_sel_or_line
 
--- selects to end of line if no text is currently selected and
--- pushes it to the kill-ring before cutting (default) or copying
-function Editing.smart_cutcopy(action)
+---
+-- Cuts or copies text ranges intelligently. (Behaves like Emacs.)
+-- If no text is selected, all text from the cursor to the end of
+-- the line is cut or copied as indicated by action and pushed onto
+-- the kill-ring. If there is text selected, it is cut or copied
+-- and pushed onto the kill-ring.
+-- @param action The action to perform. Cut is done by default.
+--   Specify 'copy' to copy text instead.
+-- @see insert_into_kill_ring
+function smart_cutcopy(action)
   local txt = editor:GetSelText()
   if string.len(txt) == 0 then editor:LineEndExtend() end
   txt = editor:GetSelText()
@@ -96,16 +109,20 @@ function Editing.smart_cutcopy(action)
   editor:Copy()
 end
 
--- retrieves top item off kill-ring, or scrolls through it
--- if no args, does standard paste from current item in kill-ring
--- if arg is 'cycle', starts cycling through previous cuts/copies
--- if arg is 'reverse', cycles in reverse order
-function Editing.smart_paste(...)
+---
+-- Retrieves the top item off the kill-ring and pastes it.
+-- If an action is specified, the text is kept selected for
+-- scrolling through the kill-ring.
+-- @param action If given, specifies whether to cycle through
+--   the kill-ring in normal or reverse order. A value of 'cycle'
+--   cycles through normally, 'reverse' in reverse.
+-- @see scroll_kill_ring
+function smart_paste(action)
   local anchor, pos = editor.Anchor, editor.CurrentPos
   if pos < anchor then anchor = pos end
   local txt = editor:GetSelText()
   if txt == kill_ring[kill_ring.pos] then
-    scroll_kill_ring( arg[1] )
+    scroll_kill_ring(action)
   end
 
   -- if text was copied to the clipboard from other apps, insert
@@ -122,22 +139,28 @@ function Editing.smart_paste(...)
   txt = kill_ring[kill_ring.pos]
   if txt then
     editor:ReplaceSel(txt)
-    if arg[1] then editor.Anchor = anchor end -- cycle
+    if action then editor.Anchor = anchor end -- cycle
   end
 end
 
--- selects or deletes word under cursor
-function Editing.current_word(action)
+---
+-- Selects the current word under the caret and if action
+-- indicates, delete it.
+-- @param action Optional action to perform with selected
+--   word. If 'delete', it is deleted.
+function current_word(action)
   local s = editor:WordStartPosition(editor.CurrentPos)
   local e = editor:WordEndPosition(editor.CurrentPos)
   editor:SetSel(s, e)
   if action == 'delete' then editor:DeleteBack() end
 end
 
--- if at the end of the current word, transposes the two chars
--- before the caret; otherwise transposes char to the left of the
--- caret with the current one
-function Editing.transpose_chars()
+---
+-- Transposes characters intelligently.
+-- If the carat is at the end of the current word, the two
+-- characters before the caret are transposed. Otherwise the
+-- characters to the left and right of the caret are transposed.
+function transpose_chars()
   editor:BeginUndoAction()
   local pos  = editor.CurrentPos
   local char = editor.CharAt[pos - 1]
@@ -152,10 +175,12 @@ function Editing.transpose_chars()
   editor:EndUndoAction()
 end
 
--- reduces multiple character occurances to the left of the
--- cursor to just one; if char is not given, the character under
--- the cursor is used
-function Editing.squeeze(char)
+---
+-- Reduces multiple characters occurances to just one.
+-- If char is not given, the character to be squeezed is the one
+-- under the caret.
+-- @param char The character to be used for squeezing.
+function squeeze(char)
   if not char then char = editor.CharAt[editor.CurrentPos - 1] end
   local s, e = editor.CurrentPos - 1, editor.CurrentPos - 1
   while editor.CharAt[s] == char do s = s - 1 end
@@ -164,17 +189,21 @@ function Editing.squeeze(char)
   editor:ReplaceSel( string.char(char) )
 end
 
-
--- joins current line with line below, eliminating whitespace
-function Editing.join_lines()
+---
+-- Joins the current line with the line below, eliminating
+-- whitespace.
+function join_lines()
   editor:BeginUndoAction()
   editor:LineEnd() editor:Clear() editor:AddText(' ')
-  Editing.squeeze()
+  squeeze()
   editor:EndUndoAction()
 end
 
--- moves current line up or down
-function Editing.move_line(direction)
+---
+-- Moves the current line in the specified direction up or down.
+-- @param direction 'up' moves the current line up, 'down' moves
+--   it down.
+function move_line(direction)
   local column = editor.Column[editor.CurrentPos]
   editor:BeginUndoAction()
   if direction == 'up' then
@@ -189,13 +218,21 @@ function Editing.move_line(direction)
   editor:EndUndoAction()
 end
 
--- encloses text in an enclosure set
--- if there is text selected, it is enclosed; otherwise the
--- previous word is enclosed
--- multiple previous words can be enclosed by appending a number
--- to the end of the last word (e.g. enclose this2); if enclosing
--- with multiple characters, the same rule applies (e.g. this**2)
-function Editing.enclose(str)
+---
+-- Encloses text in an enclosure set.
+-- If text is selected, it is enclosed. Otherwise, the previous
+-- word is enclosed. The n previous words can be enclosed by
+-- appending n (a number) to the end of the last word.
+-- When enclosing with a character, append the character to the
+-- end of the word(s). To enclose previous word(s) with n
+-- characters, append n (a number) to the end of character set.
+-- Examples:
+--   enclose this2 -> 'enclose this' (enclose in sng_quotes)
+--   enclose this2**2 -> **enclose this**
+-- @param str The enclosure type in enclosure.
+-- @see enclosure
+-- @see get_preceding_number
+function enclose(str)
   editor:BeginUndoAction()
   local txt = editor:GetSelText()
   if txt == '' then
@@ -225,10 +262,14 @@ function Editing.enclose(str)
   editor:EndUndoAction()
 end
 
--- selects text in a specified enclosure; if none specified,
--- searches for matching character pairs defined in char_matches
--- from the inside out
-function Editing.select_enclosed(str)
+---
+-- Selects text in a specified enclosure.
+-- @param str The enclosure type in enclosure. If str is not
+--   specified, matching character pairs defined in char_matches
+--   are searched for from the caret outwards.
+-- @see enclosure
+-- @see char_matches
+function select_enclosed(str)
   if str then
     editor:SearchAnchor(editor.CurrentPos)
     local s = editor:SearchPrev( 0, enclosure[str].left )
@@ -253,21 +294,28 @@ function Editing.select_enclosed(str)
   end
 end
 
--- select current line
-function Editing.select_line()
+---
+-- Selects the current line.
+function select_line()
   editor:Home() editor:LineEndExtend()
 end
 
--- select current paragraph (delimited by newlines)
-function Editing.select_paragraph()
+---
+-- Selects the current paragraph.
+-- Paragraphs are delimited by two consecutive newlines.
+function select_paragraph()
   editor:ParaUp() editor:ParaDownExtend()
 end
 
--- if no block of text is selected, selects block of text with
--- the current indentation; otherwise if border lines are both
--- one level of indentation up, they are added to the selection;
--- else acts like no block of text is selected
-function Editing.select_indented_block()
+---
+-- Selects indented blocks intelligently.
+-- If no block of text is selected, all text with the current
+-- level of indentation is selected. If a block of text is
+-- selected and the lines to the top and bottom of it are one
+-- indentation level lower, they are added to the selection.
+-- In all other cases, the behavior is the same as if no text
+-- is selected.
+function select_indented_block()
   local s = editor:LineFromPosition(editor.Anchor)
   local e = editor:LineFromPosition(editor.CurrentPos)
   if s > e then s, e = e, s end
@@ -287,8 +335,9 @@ function Editing.select_indented_block()
   editor:SetSel(s, e)
 end
 
--- selects text in scope (style) under cursor
-function Editing.select_scope()
+---
+-- Selects all text with the same scope/style as under the caret.
+function select_scope()
   local start_pos = editor.CurrentPos
   local base_style = editor.StyleAt[start_pos]
   local pos = start_pos - 1
@@ -299,8 +348,10 @@ function Editing.select_scope()
   editor:SetSel(start_style + 1, pos)
 end
 
--- executes line or selection as Ruby code
-function Editing.ruby_exec()
+---
+-- Executes the selection or contents of the current line as Ruby
+-- code, replacing the text with the output.
+function ruby_exec()
   local txt = get_sel_or_line()
   local f, out
   -- write the file
@@ -319,17 +370,21 @@ function Editing.ruby_exec()
   editor:ReplaceSel(out)
 end
 
--- executes line or selection as Lua code
-function Editing.lua_exec()
+---
+-- Executes the selection or contents of the current line as Lua
+-- code, replacing the text with the output.
+function lua_exec()
   local txt = get_sel_or_line()
   dostring(txt)
   editor:SetSel(editor.CurrentPos, editor.CurrentPos)
 end
 
--- reformats current paragraph or reformats selected text
-function Editing.reformat_paragraph()
+---
+-- Reformats the selected text or current paragraph using the
+-- command FMTP_CMD.
+function reformat_paragraph()
   if PLATFORM ~= 'linux' then print('Linux only') return end
-  if editor:GetSelText() == '' then Editing.select_paragraph() end
+  if editor:GetSelText() == '' then select_paragraph() end
   local txt = editor:GetSelText()
   local f, out
   f = io.open(FILE_IN, 'w') f:write(txt) f:close()
@@ -342,33 +397,11 @@ function Editing.reformat_paragraph()
   editor:ReplaceSel(out)
 end
 
--- convert spaces to tabs or vice-versa
 --[[
-function Editing.convert(what)
-  local spaces_per_tab = editor.TabWidth
-  editor:BeginUndoAction()
-  for i = 0, editor.LineCount - 1 do
-    if editor.LineIndentation[i] ~= 0 then
-      local vhome = editor.LineIndentPosition[i]
-      local home  = editor:PositionFromLine(i)
-      editor:SetSel(home, vhome)
-      local indent = editor:GetSelText()
-      local spaces = string.rep(' ', spaces_per_tab)
-      if what == 'spaces_to_tabs' then
-        indent = string.gsub(indent, spaces, '\t')
-      elseif what == 'tabs_to_spaces' then
-        indent = string.gsub(indent, '\t', spaces)
-      end
-      editor:ReplaceSel(indent)
-    end
-  end
-  editor:EndUndoAction()
-  return true
-end
-]]--
-
---[[
-function Editing.goto_ctag()
+---
+-- Jumps to a buffer and location specified by a CTag selected
+-- or on the current line.
+function goto_ctag()
   local line = get_sel_or_line()
   local s1, s2, tag_name, file_name, tag_pattern =
         string.find(line, '([^\t]*)\t([^\t]*)\t(.*)$')
@@ -392,7 +425,11 @@ function Editing.goto_ctag()
 end
 ]]--
 
--- inserts text into the kill_ring
+---
+-- [Local function] Inserts text into kill_ring.
+-- If it grows larger than maxn, the oldest inserted text is
+-- replaced.
+-- @see smart_cutcopy
 insert_into_kill_ring = function(txt)
   table.insert(kill_ring, 1, txt)
   if table.getn(kill_ring) > kill_ring.maxn then
@@ -400,7 +437,11 @@ insert_into_kill_ring = function(txt)
   end
 end
 
--- scrolls kill_ring backward or forward (default)
+---
+-- [Local function] Scrolls kill_ring in the specified direction.
+-- @param direction The direction to scroll: 'forward' (default)
+--   or 'reverse'.
+-- @see smart_paste
 scroll_kill_ring = function(direction)
   if direction == 'reverse' then
     kill_ring.pos = kill_ring.pos - 1
@@ -415,7 +456,10 @@ scroll_kill_ring = function(direction)
   end
 end
 
--- returns number to the left of the cursor
+---
+-- [Local function] Returns the number to the left of the caret.
+-- This is used for the enclose function.
+-- @see enclose
 get_preceding_number = function()
   local pos = editor.CurrentPos
   local char = editor.CharAt[pos - 1]
@@ -428,8 +472,10 @@ get_preceding_number = function()
   return tonumber(txt) or 1, string.len(txt)
 end
 
--- returns selection or current line
+---
+-- [Local function] Returns the current selection or the contents
+-- of the current line.
 get_sel_or_line = function()
-  if editor:GetSelText() == '' then Editing.select_line() end
+  if editor:GetSelText() == '' then select_line() end
   return editor:GetSelText()
 end

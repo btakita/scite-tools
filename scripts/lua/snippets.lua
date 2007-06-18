@@ -7,13 +7,15 @@
 
   Permission to use, copy, modify, and distribute this file
   is granted, provided credit is given to Mitchell.
-
-  Snippets for the Lua "bundle"
 ]]--
 
-if not snippets then snippets = {} end
+---
+-- Snippets for the lua module.
+module('modules.lua.snippets', package.seeall)
 
-snippets[SCE_LUA_DEFAULT] = {
+if not _G.snippets then _G.snippets = {} end
+
+_G.snippets[SCE_LUA_DEFAULT] = {
   l    = "local ${1:expr}${2: = ${3:value}}",
   p    = "print(${0})",
   f    = "function ${1:name}(${2:args})\n  ${0}\nend",

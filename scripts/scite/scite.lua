@@ -7,27 +7,28 @@
 
   Permission to use, copy, modify, and distribute this file
   is granted, provided credit is given to Mitchell.
-
-  SciTE "bundle" loader
 ]]--
 
-local PLATFORM = PLATFORM or 'linux'
+---
+-- The scite module.
+-- It provides utilities for editing text in SciTE.
+module('modules.scite', package.seeall)
 
 require 'scite/editing'
 require 'scite/file_browser'
 require 'scite/functions'
 require 'scite/mlines'
 require 'scite/snippets'
---require 'scite/styler'
 if PLATFORM == 'linux' then
   require 'scite/cdialog'
-  require 'scite/filter_through'
+  --require 'scite/filter_through'
   require 'scite/macros'
 end
 require 'scite/keys' -- important to load last
 
-SciTE = {}
-
-function SciTE.open_module(name)
+---
+-- Opens specified module in SciTE.
+-- @param name The name of the module.
+function open_module(name)
   scite.Open( props['SciteDefaultHome']..'/scripts/'..name )
 end

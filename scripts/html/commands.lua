@@ -7,9 +7,20 @@
 
   Permission to use, copy, modify, and distribute this file
   is granted, provided credit is given to Mitchell.
-
-  Commands for the HTML "bundle"
 ]]--
+
+---
+-- Commands for the html module.
+-- There are several option variables used:
+--   PLATFORM: OS platform (linux or windows).
+--   FILE_IN: Location of the temporary file used as STDIN for
+--     various operations.
+--   FILE_OUT: Location of the temporary file that will contain
+--     output for various operations.
+--   REDIRECT: The command line symbol used for redirecting STDOUT
+--     to a file.
+--   PHP_CMD: The command that executes the PHP interpreter.
+module('modules.html.commands', package.seeall)
 
 -- platform specific options
 local PLATFORM = PLATFORM or 'linux'
@@ -30,8 +41,14 @@ end
 -- local functions
 local php_command, get_sel_or_line
 
--- block comment HTML
-function HTML.toggle_block_comment()
+---
+-- Toggle block comment function for HTML.
+-- If a single line is being block commented, it is done so on the
+-- same line. If multiple lines are being block commented, the
+-- start of the comment is placed on a new line before the first
+-- selected line and the end of the comment is placed on a new line
+-- after the last selected line.
+function toggle_block_comment()
   local sep = ' '
   local sline = editor:LineFromPosition(editor.CurrentPos)
   local eline = editor:LineFromPosition(editor.Anchor)
@@ -54,48 +71,69 @@ function HTML.toggle_block_comment()
   end
 end
 
--- wraps the selection inside an html tag
-function HTML.wrap_in_tag()
-  Snippets.insert(
+---
+-- Wraps the selected text inside a snippet that expands to an HTML
+-- tag.
+function wrap_in_tag()
+  modules.scite.snippets.insert(
     "<${1:p}>$(SelectedText)</${1/^\\s*(\\S+)\\s*/$1/}>")
 end
 
--- URL-encodes string
-function HTML.encode_url()
+---
+-- Uses PHP to replace the selection or the contents of the current
+-- line with its URL-encoded equivalent.
+-- @see php_command.
+function encode_url()
   local txt = get_sel_or_line()
   editor:ReplaceSel(
     php_command('echo urlencode( fgets(STDIN) );', txt) )
 end
 
--- decodes URL-encoded string
-function HTML.decode_url()
+---
+-- Uses PHP to replace the URL-encoded selection or the contents
+-- of the current line with its URL-decoded equivalent.
+-- @see php_command.
+function decode_url()
   local txt = get_sel_or_line()
   editor:ReplaceSel(
     php_command('echo urldecode( fgets(STDIN) );', txt) )
 end
 
--- convert all applicable characters to HTML entities
-function HTML.encode_html_entities()
+---
+-- Uses PHP to replace special characters in the selection or
+-- the contents of the current line with their HTML entities.
+-- @see php_command.
+function encode_html_entities()
   local txt = get_sel_or_line()
   editor:ReplaceSel(
     php_command('echo htmlentities( fgets(STDIN) );', txt) )
 end
 
--- convert all HTML entities to their applicable characters
-function HTML.decode_html_entities()
+---
+-- Uses PHP to replace HTML entities in the selection or the
+-- contents of the current line with their ASCII equivalents.
+-- @see php_command.
+function decode_html_entities()
   local txt = get_sel_or_line()
   editor:ReplaceSel(
     php_command('echo html_entity_decode( fgets(STDIN) );', txt) )
 end
 
--- strip HTML and PHP tags from a string
-function HTML.strip_tags()
+---
+-- Use PHP to strip HTML and PHP tags from the selection or
+-- the contents of the current line and replace the text.
+-- @see php_command.
+function strip_tags()
   local txt = get_sel_or_line()
   editor:ReplaceSel(
     php_command('echo strip_tags( fgets(STDIN) );', txt) )
 end
 
--- execute and return results of the php command
+---
+-- [Local function] Execute PHP and return the result printed to
+-- STDOUT.
+-- @param cmd The PHP code to execute.
+-- @param input The text provided as STDIN for cmd.
 php_command = function(cmd, input)
   local f, out
   f = io.open(FILE_IN, 'w') f:write(input) f:close()
@@ -104,14 +142,17 @@ php_command = function(cmd, input)
   return out
 end
 
--- returns selection or current line
+---
+-- [Local function] Returns the current selection or the contents
+-- of the current line.
 get_sel_or_line = function()
   if editor:GetSelText() == '' then Editing.select_line() end
   return editor:GetSelText()
 end
 
 -- HTML-specific key commands
+local keys = _G.keys
 if keys and type(keys) == 'table' then
-  keys[SCLEX_HTML].cq  = { HTML.toggle_block_comment }
-  keys[SCLEX_HTML].caw = { HTML.wrap_in_tag          }
+  keys[SCLEX_HTML].cq  = { toggle_block_comment }
+  keys[SCLEX_HTML].caw = { wrap_in_tag          }
 end

@@ -1,5 +1,5 @@
 --[[
-  Mitchell's lua_ext.lua
+  Mitchell's extension.lua
   Copyright (c) 2006-2007 Mitchell Foral. All rights reserved.
 
   SciTE-tools homepage: http://caladbolg.net/scite.php
@@ -13,11 +13,11 @@
 
 PLATFORM = 'linux' -- or 'windows'
 LUA_PATH = props['SciteDefaultHome']..'/scripts/?.lua'
-if _VERSION == 'Lua 5.1' then
-  package.path = package.path..';'..LUA_PATH
-end
+package.path  = package.path..';'..LUA_PATH
+package.path  = string.gsub(package.path, 'local/', '')
+package.cpath = string.gsub(package.cpath, 'local/', '')
 
-require 'scite/scite' -- load SciTE "bundle"
+require 'scite/scite' -- load scite module
 
 if PLATFORM == 'windows' then
   -- I don't know how to do this in C++ in windows

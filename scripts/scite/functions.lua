@@ -7,17 +7,15 @@
 
   Permission to use, copy, modify, and distribute this file
   is granted, provided credit is given to Mitchell.
-
-  Source language functions functions for the SciTE "bundle"
-
-  API (see functions for descriptions):
-    - Functions.show(function_def_string)
-    - Functions.get_line(function_name)
-    - Functions.show_args(function_def_string)
-
-  Note: function_def_string would be 'def' for Ruby,
-    'function' for Lua, etc.
 ]]--
+
+---
+-- Source language functions functions for the scite module.
+-- There are a couple options variables used:
+--   USER_LIST_NUM: The integer to use for SciTE's UserListShow
+--     function.
+--   KEYWORD_STYLE: The integer style for keywords.
+module('modules.scite.functions', package.seeall)
 
 -- options
 local USER_LIST_NUM = 10
@@ -32,35 +30,30 @@ local KEYWORD_STYLES = {
 }
 -- end options
 
+--- Identified functions in the current buffer.
 local function_table = {}
--- local functions
-local update_function_table
 
--- goto selected function
-function OnUserListSelection(list, text)
+---
+-- SciTE Lua OnUserListSelection extension function.
+-- Jumps to the function the user has chosen from a list of
+-- functions.
+function _G.OnUserListSelection(list, text)
   if list == USER_LIST_NUM then
-    local line = Functions.get_line(text)
+    local line = get_line(text)
     if line then editor:GotoPos(line) end
   end
 end
 
--- get all functions in the current source file
-update_function_table = function(func_def)
-  function_table = {}
-  local pat = func_def..'%s+(([%w_]+)%s*%(?.*%)?)'
-  for match in editor:match(func_def..' .+', SCFIND_REGEXP) do
-    local _, _, signature, name = string.find(match.text, pat)
-    if signature and name and editor.StyleAt[match.pos] ==
-        KEYWORD_STYLES[editor.Lexer] then
-      function_table[signature] = { pos = match.pos, name = name }
-    end
-  end
-end
+-- local functions
+local update_function_table
 
-Functions = {}
-
--- displays all functions in the current source file
-function Functions.show(func_def)
+---
+-- Displays all identified functions in the current source file
+-- as a user list the user can select from to 'jump' to a specific
+-- function.
+-- @param func_def The language-specific keyword used to define a
+--   function. ('def' for Ruby, 'function' for Lua, etc.)
+function show(func_def)
   update_function_table(func_def)
   local list, list_str = {}, ''
   for k,_ in pairs(function_table) do table.insert(list, k) end
@@ -74,14 +67,23 @@ function Functions.show(func_def)
   editor.AutoCSeparator = sep
 end
 
--- returns line number the function declaration is on
-function Functions.get_line(name)
-  if function_table[name] == nil then return nil end
+---
+-- If the function declaration specified exists, return its
+-- line number.
+-- @param name The function declaration. This function is
+-- generally called by OnUserListSelection to 'jump' to a
+--   function.
+function get_line(name)
+  if not function_table[name] then return nil end
   return function_table[name].pos
 end
 
--- displays arguments of the function to the left of the cursor
-function Functions.show_args(func_def)
+---
+-- If possible, display the arguments of the function to the left
+-- of the caret. (FIXME: this is not very reliable.)
+-- @param func_def The language-specific keyword used to define a
+--   function. ('def' for Ruby, 'function' for Lua, etc.)
+function show_args(func_def)
   local pos = editor.CurrentPos
   if editor.CharAt[pos - 1] == string.byte('(') then
     pos = pos - 1
@@ -94,5 +96,22 @@ function Functions.show_args(func_def)
     local _, _, params = string.find(line, '(%(.+%))')
     if params == nil then params = 'No params' end
     editor:CallTipShow(editor.CurrentPos, params)
+  end
+end
+
+---
+-- [Local function] Searches through the current buffer to
+-- identify functions to 'jump' to.
+-- @param func_def The language-specific keyword used to define
+--   a function. ('def' for Ruby, 'function' for Lua, etc.)
+update_function_table = function(func_def)
+  function_table = {}
+  local pat = func_def..'%s+(([%w_]+)%s*%(?.*%)?)'
+  for match in editor:match(func_def..' .+', SCFIND_REGEXP) do
+    local _, _, signature, name = string.find(match.text, pat)
+    if signature and name and editor.StyleAt[match.pos] ==
+        KEYWORD_STYLES[editor.Lexer] then
+      function_table[signature] = { pos = match.pos, name = name }
+    end
   end
 end
