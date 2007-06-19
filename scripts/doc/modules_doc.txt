@@ -21,11 +21,7 @@
   (named after the module) that loads all of the functionality
   that will be provided by the module.
 
-  Generic modules are typically loaded in extension.lua. For
-  example, the 'scite' module (src/scite/) is loaded by default.
-  Take a look at src/scite/scite.lua and you will see that it is
-  indeed just a loader script for all the functionality provided
-  by the module.
+  Generic modules are typically loaded in the Lua startup script.
 
   Language-specific modules are loaded by placing the
     extension.[filepattern]=path/to/bundle/init/script
