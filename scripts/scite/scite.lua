@@ -19,11 +19,6 @@ require 'scite/file_browser'
 require 'scite/functions'
 require 'scite/mlines'
 require 'scite/snippets'
-if PLATFORM == 'linux' then
-  require 'scite/cdialog'
-  --require 'scite/filter_through'
-  require 'scite/macros'
-end
 require 'scite/keys' -- important to load last
 
 ---

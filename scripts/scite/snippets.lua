@@ -409,9 +409,12 @@ end
 ---
 -- Display an inputdialog prompting a temporary snippet to insert.
 function insert_temporary()
-  if PLATFORM ~= 'linux' then print('Linux only') return end
-  local text = inputdialog('Insert Temporary Snippet', 'Text:')
-  if text then insert(text) end
+  if inputdialog then
+    local text = inputdialog('Insert Temporary Snippet', 'Text:')
+    if text then insert(text) end
+  else
+    print("'inputdialog' not available.")
+  end
 end
 
 ---

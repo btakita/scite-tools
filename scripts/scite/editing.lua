@@ -125,15 +125,17 @@ function smart_paste(action)
     scroll_kill_ring(action)
   end
 
-  -- if text was copied to the clipboard from other apps, insert
-  -- it into the kill-ring so it can be pasted (thanks to Nathan
-  -- Robinson)
-  local clip_txt, found = scite.GetClipboardText(), false
-  if clip_txt ~= '' then
-    for _, ring_txt in ipairs(kill_ring) do
-      if clip_txt == ring_txt then found = true break end
+  if scite.GetClipboardText then
+    -- if text was copied to the clipboard from other apps, insert
+    -- it into the kill-ring so it can be pasted (thanks to Nathan
+    -- Robinson)
+    local clip_txt, found = scite.GetClipboardText(), false
+    if clip_txt ~= '' then
+      for _, ring_txt in ipairs(kill_ring) do
+        if clip_txt == ring_txt then found = true break end
+      end
+      if not found then insert_into_kill_ring(clip_txt) end
     end
-    if not found then insert_into_kill_ring(clip_txt) end
   end
 
   txt = kill_ring[kill_ring.pos]

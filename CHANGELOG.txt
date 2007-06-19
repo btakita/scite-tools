@@ -1,6 +1,18 @@
+19.06.07
+  - focused trunk/ on scripts, not customized source code now that SciTE 1.74
+    has the Lua functions I need; removed custom source code
+
 18.06.07
   - upgraded to SciTE 1.74
   - upgraded scripts/ to Lua 5.1 counterparts in SciTE-st branch
+
+16.05.07
+  - Branched the repository. branches/scite-st/ contains SciTE and Scintilla
+    that utilize dynamic lexxing.
+
+15.05.07
+  - Added SCI_GETLEXERLANGUAGE; so <pane>:GetLexerLanguage() and
+    <pane>:SetLexerLanguage(language) must be used.
 
 01.04.07
   - upgraded to SciTE 1.73
