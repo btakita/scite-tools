@@ -245,9 +245,5 @@ if PLATFORM == 'linux' then
   if ALTERNATIVE_KEYS then
     if not keys.cc then keys.cc = { e = {} } end
     keys.cc.e.r = { m_editing.reformat_paragraph }
-    keys.am.r   = { 311 } -- macro start record
-    keys.am.s   = { 312 } -- macro stop record
-    keys.am.p   = { modules.scite.macros.play }
   end
-  keys['c\t'] = { modules.scite.cdialog.switch_buffer }
 end
