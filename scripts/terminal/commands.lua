@@ -61,16 +61,15 @@ end
 
 ---
 -- Sends text to the terminal server as input.
--- @param txt The text input to send to the terminal server. If
---   none specified, the current selection or the contents of the
---   current line is used as input.
+-- @param txt The text input to send to the terminal server. If none specified,
+--   the current selection or the contents of the current line is used as
+--   input.
 function send(txt)
   if not txt then txt = editor:GetSelText() end
   if txt == '' then
-    txt = editor:GetLine(
-      editor:LineFromPosition(editor.CurrentPos) )
+    txt = editor:GetLine( editor:LineFromPosition(editor.CurrentPos) )
   end
-  txt = string.gsub(txt, '^'..prompt, '')
+  txt = txt:gsub('^'..prompt, '')
   m_terminal.client:send(txt..'\n')
 end
 
@@ -88,8 +87,8 @@ end
 
 ---
 -- Prints text to the current buffer on a new line.
--- This is generally called when data is received from the
--- terminal server to be displayed.
+-- This is generally called when data is received from the terminal server to
+-- be displayed.
 -- @param txt The text to print to the current buffer.
 function print(txt)
   editor:LineEndExtend()
@@ -103,8 +102,5 @@ end
 if type(keys) == 'table' then
   keys.cg = { start, 3003 }
   keys.cq = { close }
-  keys['s\n'] = { function()
-    send()
-    print( receive() )
-  end }
+  keys['s\n'] = { function() send() print( receive() ) end }
 end

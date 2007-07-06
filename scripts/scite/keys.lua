@@ -13,19 +13,19 @@
 
 ---
 -- Manages key commands in SciTE.
--- Key commands are defined in a separate key_commands.lua file
--- that is located in the same directory or LUA_PATH.
+-- Key commands are defined in a separate key_commands.lua file that is located
+-- in the same directory or package.path.
 -- There are several option variables used:
 --   PLATFORM: OS platform (linux or windows)
---   SCOPES_ENABLED: Flag indicating whether scopes/styles can be
---     used for key commands.
+--   SCOPES_ENABLED: Flag indicating whether scopes/styles can be used for key
+--     commands.
 --   CTRL: The string representing the Control key.
 --   SHIFT: The string representing the Shift key.
 --   ALT: The string representing the Alt key.
---   ADD: The string representing used to join together a sequence
---     of Control, Shift, or Alt modifier keys.
---   KEYCHAIN_PROP: The SciTE property that will be updated each
---     time the keychain is modified.
+--   ADD: The string representing used to join together a sequence of Control,
+--     Shift, or Alt modifier keys.
+--   KEYCHAIN_PROP: The SciTE property that will be updated each time the
+--     keychain is modified.
 module('modules.scite.keys', package.seeall)
 
 -- options
@@ -40,19 +40,17 @@ local KEYCHAIN_PROP = 'KeyChain'
 
 ---
 -- [Local table] Lookup table for key values higher than 255.
--- If a key value given to OnKey is higher than 255, this table
--- is used to return a string representation of the key if it
--- exists.
+-- If a key value given to OnKey is higher than 255, this table is used to
+-- return a string representation of the key if it exists.
 -- @class table
 -- @name KEYSYMS
 local KEYSYMS
 
 ---
--- [Local table] (Windows only) Lookup table for characters when
--- the Shift key is pressed.
--- Windows uses the same keycodes even if shift is pressed. So if
--- it is, use the keycode and table to lookup the actual character
--- printed.
+-- [Local table] (Windows only) Lookup table for characters when the Shift key
+-- is pressed.
+-- Windows uses the same keycodes even if shift is pressed. So if it is, use
+-- the keycode and table to lookup the actual character printed.
 local SHIFTED
 
 if PLATFORM == 'linux' then
@@ -129,11 +127,10 @@ elseif PLATFORM == 'windows' then
     [222] = '\'',    -- single quote
   }
   SHIFTED = {
-    [49]  = '!', [50]  = '@', [51]  = '#', [52]  = '$',
-    [53]  = '%', [54]  = '^', [55]  = '&', [56]  = '*',
-    [57]  = '(', [48]  = ')', [186] = ':', [187] = '+',
-    [188] = '<', [189] = '_', [190] = '>', [191] = '?',
-    [192] = '~', [219] = '{', [220] = '|', [221] = '}',
+    [49]  = '!', [50]  = '@', [51]  = '#', [52]  = '$', [53]  = '%',
+    [54]  = '^', [55]  = '&', [56]  = '*', [57]  = '(', [48]  = ')',
+    [186] = ':', [187] = '+', [188] = '<', [189] = '_', [190] = '>',
+    [191] = '?', [192] = '~', [219] = '{', [220] = '|', [221] = '}',
     [222] = '"',
   }
 end
@@ -158,17 +155,14 @@ function clear_key_sequence()
 end
 
 ---
--- Determines the possible completions for the current key
--- sequence and prints them out.
--- (Only prints key combinations, not command names.)
+-- Determines the possible completions for the current key sequence and prints
+-- them out. (Only prints key combinations, not command names.)
 function show_completions()
-  if table.getn(keychain) == 0 then return end
+  if #keychain == 0 then return end
   active_table = _G.keys
-  for _,key_seq in ipairs(keychain) do
-    active_table = active_table[key_seq]
-  end
+  for _,key_seq in ipairs(keychain) do active_table = active_table[key_seq] end
   completion_str = ''
-  for key_seq,_ in pairs(active_table) do
+  for key_seq in pairs(active_table) do
     completion_str = completion_str..key_seq..'\t'
   end
   print("Completions for '"..props[KEYCHAIN_PROP].."':")
@@ -178,13 +172,12 @@ end
 
 ---
 -- SciTE OnKey Lua extension function.
--- It is called every time a key is pressed and determines
--- which commands to execute or which new key in a chain to
--- enter based on the current key sequence, lexer, and scope.
--- @return OnKey returns what the commands it executes return.
---   If nothing is returned, OnKey returns true by default.
---   A true return value will tell SciTE not to handle the key
---   afterwords.
+-- It is called every time a key is pressed and determines which commands to
+-- execute or which new key in a chain to enter based on the current key
+-- sequence, lexer, and scope.
+-- @return OnKey returns what the commands it executes return. If nothing is
+--   returned, OnKey returns true by default. A true return value will tell
+--   SciTE not to handle the key afterwords.
 function _G.OnKey(code, shift, control, alt)
   local key_seq = ''
   if control then key_seq = key_seq..CTRL..ADD end
@@ -193,7 +186,7 @@ function _G.OnKey(code, shift, control, alt)
   --print(code, string.char(code))
   if LINUX then
     if code < 256 then
-      key_seq = key_seq..string.lower( string.char(code) )
+      key_seq = key_seq..string.char(code):lower()
     else
       if not KEYSYMS[code] then return end
       key_seq = key_seq..KEYSYMS[code]
@@ -204,22 +197,16 @@ function _G.OnKey(code, shift, control, alt)
     elseif KEYSYMS[code] then
       key_seq = key_seq..KEYSYMS[code]
     elseif code > 47 then -- printable chars start at 48 (0)
-      key_seq = key_seq..string.lower( string.char(code) )
+      key_seq = key_seq..string.char(code):lower()
     else
       return
     end
   end
 
   if key_seq == _G.keys.clear_sequence then
-    if table.getn(keychain) > 0 then
-      clear_key_sequence()
-      return true
-    end
+    if #keychain > 0 then clear_key_sequence() return true end
   elseif key_seq == _G.keys.show_completions then
-    if table.getn(keychain) > 0 then
-      show_completions()
-      return true
-    end
+    if #keychain > 0 then show_completions() return true end
   end
 
   local lexer = editor.Lexer
@@ -227,32 +214,33 @@ function _G.OnKey(code, shift, control, alt)
   local ret, func, arg
   -- print(key_seq, 'Lexer: '..lexer, 'Scope: '..scope)
 
-  table.insert(keychain, key_seq)
+  keychain[#keychain + 1] = key_seq
   if SCOPES_ENABLED then
     ret, func, arg = pcall(try_get_cmd1, key_seq, lexer, scope)
   end
-  if not ret and
-    (func and string.sub(func, -5) ~= 'chain' or true) then
+  if not ret and (func and func:sub(-5) ~= 'chain' or true) then
     ret, func, arg = pcall(try_get_cmd2, key_seq, lexer)
   end
-  if not ret and string.sub(func, -5) ~= 'chain' then
+  if not ret and func:sub(-5) ~= 'chain' then
     ret, func, arg = pcall(try_get_cmd3, key_seq)
   end
 
   if ret then
     clear_key_sequence()
     if type(func) == 'function' then
-      _, ret = pcall(func, arg)
-      if type(ret) == 'boolean' then return ret end
+      local ret, retval = pcall(func, arg)
+      if ret then
+        if type(retval) == 'boolean' then return retval end
+      else print(retval) end -- error
     elseif type(func) == 'number' then
       scite.MenuCommand(func)
     end
     return true
   else
-    -- clear key sequence because it's not part of a chain
-    -- (try_get_cmd throws error 'Part of chain')
-    if string.sub(func, -5) ~= 'chain' then
-      local size = table.getn(keychain) - 1
+    -- Clear key sequence because it's not part of a chain.
+    -- (try_get_cmd throws error string 'Part of chain'.)
+    if func:sub(-5) ~= 'chain' then
+      local size = #keychain - 1
       clear_key_sequence()
       if size > 0 then -- previously in a chain
         props[KEYCHAIN_PROP] = 'Invalid Sequence'
@@ -263,12 +251,12 @@ function _G.OnKey(code, shift, control, alt)
   end
 end
 
--- Note the following functions are called inside pcall so error
--- handling or checking if keys exist etc. is not necessary.
+-- Note the following functions are called inside pcall so error handling or
+-- checking if keys exist etc. is not necessary.
 
 ---
--- [Local function] Tries to get a key command based on the lexer
--- and current scope.
+-- [Local function] Tries to get a key command based on the lexer and current
+-- scope.
 try_get_cmd1 = function(key_seq, lexer, scope)
   return try_get_cmd( _G.keys[lexer][scope], key_seq )
 end
@@ -286,8 +274,7 @@ try_get_cmd3 = function(key_seq)
 end
 
 ---
--- [Local function] Helper function to get commands with the
--- current keychain.
+-- [Local function] Helper function to get commands with the current keychain.
 try_get_cmd = function(active_table)
   local str_seq = ''
   for _, key_seq in ipairs(keychain) do

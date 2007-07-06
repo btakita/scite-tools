@@ -10,40 +10,36 @@
   Permission to use, copy, modify, and distribute this
   utility is granted, provided credit is given to Mitchell
 
-  Like Textmate, I have devised a simple bundle-like system for
-  SciTE commands, snippets, and key commands in the form of
-  modules. Although this structure is not strictly enforced, it is
-  clean and intuitive. Modules utilize the Lua 5.1 package model.
+  Like Textmate, I have devised a simple bundle-like system for SciTE commands,
+  snippets, and key commands in the form of modules. Although this structure is
+  not strictly enforced, it is clean and intuitive. Modules utilize the Lua 5.1
+  package model.
 
-  There are two kinds of modules: generic and language-specific.
-  Both are just single directories full of Lua scripts and maybe
-  additional files. Typically each module has an init script
-  (named after the module) that loads all of the functionality
-  that will be provided by the module.
+  There are two kinds of modules: generic and language-specific. Both are just
+  single directories full of Lua scripts and maybe additional files. Typically
+  each module has an init script (named after the module) that loads all of the
+  functionality that will be provided by the module.
 
   Generic modules are typically loaded in the Lua startup script.
 
   Language-specific modules are loaded by placing the
     extension.[filepattern]=path/to/bundle/init/script
-  in a SciTE properties file (most probably Global or User).
-  Each language-specific module contains the init script, and
-  generally a commands.lua and snippets.lua script in addition to
-  an API file, extra documentation, etc. The commands.lua provides
-  useful functionality and langage-specific key commands for the
-  module and the snippets.lua script contains language-specific
-  snippets. It is recommended to create a table for each module
-  so as not to pollute the global Lua environment. So for example
-  in the Ruby module, there is a Ruby table that contains all
-  functions, variables, etc. For examples, see the html, lua, php,
-  or ruby modules.
+  in a SciTE properties file (most probably Global or User). Each language-
+  specific module contains the init script, and generally a commands.lua and
+  snippets.lua script in addition to an API file, extra documentation, etc. The
+  commands.lua provides useful functionality and langage-specific key commands
+  for the module and the snippets.lua script contains language-specific
+  snippets. It is recommended to create a table for each module so as not to
+  pollute the global Lua environment. So for example in the Ruby module, there
+  is a Ruby table that contains all functions, variables, etc. For examples,
+  see the html, lua, php, or ruby modules.
 
-  When assigning key commands to module functions, do not forget to
-  do so AFTER the function has been defined. You will notice that
-  in all language-specific moduless, key commands are always at the
-  end of the commands.lua scripts.
+  When assigning key commands to module functions, do not forget to do so AFTER
+  the function has been defined. You will notice that in all language-specific
+  moduless, key commands are always at the end of the commands.lua scripts.
 
-  Also, keep in mind when calling module functions from the SciTE
-  tools menu, call it with
+  Also, keep in mind when calling module functions from the SciTE tools menu,
+  call it with
     command.[num].[filepattern]=dostring [module_name].[function]
-  If your function requires parameters, you may have to supply
-  them in the command definition (even empty strings)
+  If your function requires parameters, you may have to supply them in the
+  command definition (even empty strings)

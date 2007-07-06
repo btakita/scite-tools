@@ -13,7 +13,7 @@
 -- Snippets for the ruby module.
 module('modules.ruby.snippets', package.seeall)
 
-if not _G.snippets then _G.snippets = {} end
+local snippets = _G.snippets
 
 snippets[SCE_RB_DEFAULT] = {
   rb   = "#!`which ruby`",

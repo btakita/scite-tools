@@ -1,16 +1,15 @@
 -- Test suite for snippets.lua
 
 local snippets = _G.snippets
-snippets.none = {}
-snippets.none.tabs = "${3:three} ${1:one} ${2:two}"
-snippets.none.etabs = "${2:one ${1:two} ${3:three}} ${4:four}"
-snippets.none.mirrors = "${1:one} ${2:two} ${1} ${2}"
-snippets.none.rmirrors = "${1:one} ${1/one/two/}"
-snippets.none.rgroups = [[Ordered pair: ${1:(2, 8)} so ${1/(\d), (\d)/x = $1, y = $2/}]]
-snippets.none.trans = "${1:one} ${1/o(ne)?/O$1/}"
-snippets.none.scivar = "$(FilePath)"
-snippets.none.esc = "\\${1:fake one} ${1:real one} {${2:\\} two}"
-snippets.none.eruby = "${1:one} ${1/.+/#{$0.capitalize}/}"
+snippets.tabs = "${3:three} ${1:one} ${2:two}"
+snippets.etabs = "${2:one ${1:two} ${3:three}} ${4:four}"
+snippets.mirrors = "${1:one} ${2:two} ${1} ${2}"
+snippets.rmirrors = "${1:one} ${1/one/two/}"
+snippets.rgroups = [[Ordered pair: ${1:(2, 8)} so ${1/(\d), (\d)/x = $1, y = $2/}]]
+snippets.trans = "${1:one} ${1/o(ne)?/O$1/}"
+snippets.scivar = "$(FilePath)"
+snippets.esc = "\\${1:fake one} ${1:real one} {${2:\\} two}"
+snippets.eruby = "${1:one} ${1/.+/#{$0.capitalize}/}"
 
 function test_snippets()
   local editor = _G.editor

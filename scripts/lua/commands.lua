@@ -20,22 +20,22 @@ module('modules.lua.commands', package.seeall)
 -- @see try_to_autocomplete_end
 local control_structure_patterns = {
   '^%s*for', '^%s*function', '^%s*if', '^%s*repeat', '^%s*while',
-  'function%s*%(.*%)%s*$', '^%s*local%s*function'
+  'function%s*%b()%s*$', '^%s*local%s*function'
 }
 
 ---
--- Try to autocomplete Lua's 'end' keyword for control structures
--- like 'if', 'while', 'for', etc.
+-- Try to autocomplete Lua's 'end' keyword for control structures like 'if',
+-- 'while', 'for', etc.
 -- @see control_structure_patterns
 function try_to_autocomplete_end()
   editor:BeginUndoAction()
   editor:LineEnd() editor:NewLine()
   local line_num = editor:LineFromPosition(editor.CurrentPos)
   local line = editor:GetLine(line_num - 1)
-  for _, regex in ipairs(control_structure_patterns) do
-    if string.find(line, regex) then
+  for _, patt in ipairs(control_structure_patterns) do
+    if line:match(patt) then
       local indent = editor.LineIndentation[line_num - 1]
-      if string.find(regex, 'repeat') then
+      if patt:match('repeat') then
         editor:AddText('\nuntil')
       else
         editor:AddText('\nend')
@@ -50,23 +50,19 @@ function try_to_autocomplete_end()
 end
 
 ---
--- Determine the Lua file being 'require'd, and search through
--- the LUA_PATH for that file and open it in SciTE.
+-- Determine the Lua file being 'require'd, and search through package.path for
+-- that file and open it in SciTE.
 function goto_required()
-  local line = editor:GetLine(
-    editor:LineFromPosition(editor.CurrentPos) )
-  local patterns = {
-    'require[%s]*(%b())',
-    'require[%s]*(([\'"])[^%2]+%2)'
-  }
+  local line = editor:GetLine( editor:LineFromPosition(editor.CurrentPos) )
+  local patterns = { 'require%s*(%b())', 'require%s*(([\'"])[^%2]+%2)' }
   local file
   for _, patt in ipairs(patterns) do
-    _, _, file = string.find(line, patt)
+    file = line:match(patt)
     if file then break end
   end
   file = loadstring('return '..file)()
-  for path in string.gfind(LUA_PATH..';', '(.-);') do
-    path = string.gsub(path, '?', file)
+  for path in package.path:gmatch('[^;]+') do
+    path = path:gsub('?', file)
     local f = io.open(path)
     if f then f:close() scite.Open(path) break end
   end

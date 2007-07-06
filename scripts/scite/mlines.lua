@@ -13,10 +13,8 @@
 -- Multiple line editing for the scite module.
 -- There are several option variables used:
 --   PLATFORM: OS platform (linux or windows).
---   MARK_MLINE: The integer mark used to identify an MLine marked
---     line.
---   MARK_MLINE_COLOR: The Scintilla color used for an MLine marked
---     line.
+--   MARK_MLINE: The integer mark used to identify an MLine marked line.
+--   MARK_MLINE_COLOR: The Scintilla color used for an MLine marked line.
 module('modules.scite.mlines', package.seeall)
 
 -- options
@@ -31,8 +29,8 @@ end
 -- end options
 
 ---
--- [Local table] Contains all MLine marked lines with the column
--- index to edit with respect to for each specific line.
+-- [Local table] Contains all MLine marked lines with the column index to edit
+-- with respect to for each specific line.
 -- @class table
 -- @name mlines
 local mlines = {}
@@ -41,8 +39,8 @@ local mlines_count = 0
 local mlines_most_recent
 
 ---
--- Adds an mline marker to the current line and stores the line
--- number and column position of the caret in the mlines table.
+-- Adds an mline marker to the current line and stores the line number and
+-- column position of the caret in the mlines table.
 function add()
   editor:MarkerSetBack(MARK_MLINE, MARK_MLINE_COLOR)
   local column = editor.Column[editor.CurrentPos]
@@ -54,10 +52,10 @@ function add()
 end
 
 ---
--- Adds mline markers to all lines from the most recently added
--- line to the current line.
--- The mlines table is updated as in add(), but all column
--- positions are the same as the current column caret position.
+-- Adds mline markers to all lines from the most recently added line to the
+-- current line.
+-- The mlines table is updated as in add(), but all column positions are the
+-- same as the current column caret position.
 function add_multiple()
   if mlines_count > 0 then
     local line = editor:LineFromPosition(editor.CurrentPos)
@@ -87,9 +85,9 @@ function clear()
 end
 
 ---
--- Applies changes made in the current line relative to the caret
--- column position stored initially to all lines with mline
--- markers in relation to their initial column positions.
+-- Applies changes made in the current line relative to the caret column
+-- position stored initially to all lines with mline markers in relation to
+-- their initial column positions.
 function update()
   local curr_line = editor:LineFromPosition(editor.CurrentPos)
   local curr_col  = editor.Column[editor.CurrentPos]
@@ -99,9 +97,7 @@ function update()
     local end_pos   = row_pos + curr_col
     local delta     = end_pos - start_pos
     local txt       = ''
-    if delta > 0 then
-      txt = editor:textrange(start_pos, end_pos)
-    end
+    if delta > 0 then txt = editor:textrange(start_pos, end_pos) end
     for line_num, item in pairs(mlines) do
       if line_num ~= curr_line then
         local next_pos = editor:PositionFromLine(line_num) +

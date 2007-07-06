@@ -14,12 +14,20 @@
 -- It provides utilities for editing PHP code.
 module('modules.php', package.seeall)
 
-if type(keys) == 'table' then
+if type(_G.snippets) == 'table' then
+  ---
+  -- Container for PHP-specific key commands.
+  -- @class table
+  -- @name snippets.php
+  _G.snippets.php = {}
+end
+
+if type(_G.keys) == 'table' then
   ---
   -- Container for PHP-specific key commands.
   -- @class table
   -- @name keys.php
-  keys[SCLEX_HTML] = {}
+  _G.keys[SCLEX_HTML] = {}
 end
 
 require 'php/snippets'

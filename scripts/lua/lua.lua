@@ -14,12 +14,20 @@
 -- It provides utilities for editing Lua code.
 module('modules.lua', package.seeall)
 
-if type(keys) == 'table' then
+if type(_G.snippets) == 'table' then
+  ---
+  -- Container for Lua-specific snippets.
+  -- @class table
+  -- @name snippets.lua
+  _G.snippets.lua = {}
+end
+
+if type(_G.keys) == 'table' then
   ---
   -- Container for Lua-specific key commands.
   -- @class table
   -- @name keys.lua
-  keys[SCLEX_LUA] = {}
+  _G.keys[SCLEX_LUA] = {}
 end
 
 require 'lua/snippets'

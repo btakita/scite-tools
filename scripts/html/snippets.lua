@@ -13,7 +13,6 @@
 -- Snippets for the html module
 module('modules.html.snippets', package.seeall)
 
-if not _G.snippets then _G.snippets = {} end
 local snippets = _G.snippets
 
 snippets.none = {

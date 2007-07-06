@@ -25,21 +25,28 @@ local char_matches = {
 
 ---
 -- SciTE OnChar Lua extension function.
--- Matches characters specified in char_matches if the editor pane
--- has focus.
--- This overrides the Editing module's OnChar function.
+-- Matches characters specified in char_matches if the editor pane has focus.
+-- This overrides modules.scite.editing's OnChar function.
 function _G.OnChar(c)
-  if char_matches[c] and editor.Focus then -- match enclosure chars
+  if char_matches[c] and editor.Focus then
     editor:InsertText( editor.CurrentPos, char_matches[c] )
   end
 end
 
-if type(keys) == 'table' then
+if type(_G.snippets) == 'table' then
+  ---
+  -- Container for Ruby-specific snippets.
+  -- @class table
+  -- @name snippets.ruby
+  _G.snippets.ruby = {}
+end
+
+if type(_G.keys) == 'table' then
   ---
   -- Container for Ruby-specific key commands.
   -- @class table
   -- @name keys.ruby
-  keys[SCLEX_RUBY] = {}
+  _G.keys[SCLEX_RUBY] = {}
 end
 
 require 'ruby/snippets'

@@ -1,3 +1,7 @@
+06.07.07
+  - Modified all scite-tools scripts and documentation limited to 68 characters
+    per line to the standard 80 characters per line
+
 19.06.07
   - focused trunk/ on scripts, not customized source code now that SciTE 1.74
     has the Lua functions I need; removed custom source code

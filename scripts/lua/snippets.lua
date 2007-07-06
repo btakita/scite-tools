@@ -13,7 +13,7 @@
 -- Snippets for the lua module.
 module('modules.lua.snippets', package.seeall)
 
-if not _G.snippets then _G.snippets = {} end
+local snippets = _G.snippets
 
 _G.snippets[SCE_LUA_DEFAULT] = {
   l    = "local ${1:expr}${2: = ${3:value}}",

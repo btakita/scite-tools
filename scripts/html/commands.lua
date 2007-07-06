@@ -13,12 +13,11 @@
 -- Commands for the html module.
 -- There are several option variables used:
 --   PLATFORM: OS platform (linux or windows).
---   FILE_IN: Location of the temporary file used as STDIN for
+--   FILE_IN: Location of the temporary file used as STDIN for various
+--     operations.
+--   FILE_OUT: Location of the temporary file that will contain output for
 --     various operations.
---   FILE_OUT: Location of the temporary file that will contain
---     output for various operations.
---   REDIRECT: The command line symbol used for redirecting STDOUT
---     to a file.
+--   REDIRECT: The command line symbol used for redirecting STDOUT to a file.
 --   PHP_CMD: The command that executes the PHP interpreter.
 module('modules.html.commands', package.seeall)
 
@@ -43,11 +42,10 @@ local php_command, get_sel_or_line
 
 ---
 -- Toggle block comment function for HTML.
--- If a single line is being block commented, it is done so on the
--- same line. If multiple lines are being block commented, the
--- start of the comment is placed on a new line before the first
--- selected line and the end of the comment is placed on a new line
--- after the last selected line.
+-- If a single line is being block commented, it is done so on the same line.
+-- If multiple lines are being block commented, the start of the comment is
+-- placed on a new line before the first selected line and the end of the
+-- comment is placed on a new line after the last selected line.
 function toggle_block_comment()
   local sep = ' '
   local sline = editor:LineFromPosition(editor.CurrentPos)
@@ -62,8 +60,7 @@ function toggle_block_comment()
     editor:VCHome(); editor:LineEndExtend()
   end
   local txt = editor:GetSelText()
-  local _, _, ws1, uncommented, ws2 = string.find(txt,
-    '^(%s*)<!%-%-%s?(.-)%s?%-%->(%s*)$')
+  local ws1, uncommented, ws2 = txt:match('^(%s*)<!%-%-%s?(.-)%s?%-%->(%s*)$')
   if not uncommented then
     editor:ReplaceSel('<!--'..sep..txt..sep..'-->')
   else
@@ -72,66 +69,59 @@ function toggle_block_comment()
 end
 
 ---
--- Wraps the selected text inside a snippet that expands to an HTML
--- tag.
+-- Wraps the selected text inside a snippet that expands to an HTML tag.
 function wrap_in_tag()
   modules.scite.snippets.insert(
     "<${1:p}>$(SelectedText)</${1/^\\s*(\\S+)\\s*/$1/}>")
 end
 
 ---
--- Uses PHP to replace the selection or the contents of the current
--- line with its URL-encoded equivalent.
+-- Uses PHP to replace the selection or the contents of the current line with
+-- its URL-encoded equivalent.
 -- @see php_command.
 function encode_url()
   local txt = get_sel_or_line()
-  editor:ReplaceSel(
-    php_command('echo urlencode( fgets(STDIN) );', txt) )
+  editor:ReplaceSel( php_command('echo urlencode( fgets(STDIN) );', txt) )
 end
 
 ---
--- Uses PHP to replace the URL-encoded selection or the contents
--- of the current line with its URL-decoded equivalent.
+-- Uses PHP to replace the URL-encoded selection or the contents of the current
+-- line with its URL-decoded equivalent.
 -- @see php_command.
 function decode_url()
   local txt = get_sel_or_line()
-  editor:ReplaceSel(
-    php_command('echo urldecode( fgets(STDIN) );', txt) )
+  editor:ReplaceSel( php_command('echo urldecode( fgets(STDIN) );', txt) )
 end
 
 ---
--- Uses PHP to replace special characters in the selection or
--- the contents of the current line with their HTML entities.
+-- Uses PHP to replace special characters in the selection or the contents of
+-- the current line with their HTML entities.
 -- @see php_command.
 function encode_html_entities()
   local txt = get_sel_or_line()
-  editor:ReplaceSel(
-    php_command('echo htmlentities( fgets(STDIN) );', txt) )
+  editor:ReplaceSel( php_command('echo htmlentities( fgets(STDIN) );', txt) )
 end
 
 ---
--- Uses PHP to replace HTML entities in the selection or the
--- contents of the current line with their ASCII equivalents.
+-- Uses PHP to replace HTML entities in the selection or the contents of the
+-- current line with their ASCII equivalents.
 -- @see php_command.
 function decode_html_entities()
   local txt = get_sel_or_line()
-  editor:ReplaceSel(
-    php_command('echo html_entity_decode( fgets(STDIN) );', txt) )
+  editor:ReplaceSel( php_command('echo html_entity_decode( fgets(STDIN) );', txt) )
 end
 
 ---
--- Use PHP to strip HTML and PHP tags from the selection or
--- the contents of the current line and replace the text.
+-- Use PHP to strip HTML and PHP tags from the selection or the contents of the
+-- current line and replace the text.
 -- @see php_command.
 function strip_tags()
   local txt = get_sel_or_line()
-  editor:ReplaceSel(
-    php_command('echo strip_tags( fgets(STDIN) );', txt) )
+  editor:ReplaceSel( php_command('echo strip_tags( fgets(STDIN) );', txt) )
 end
 
 ---
--- [Local function] Execute PHP and return the result printed to
--- STDOUT.
+-- [Local function] Execute PHP and return the result printed to STDOUT.
 -- @param cmd The PHP code to execute.
 -- @param input The text provided as STDIN for cmd.
 php_command = function(cmd, input)
@@ -143,8 +133,8 @@ php_command = function(cmd, input)
 end
 
 ---
--- [Local function] Returns the current selection or the contents
--- of the current line.
+-- [Local function] Returns the current selection or the contents of the
+-- current line.
 get_sel_or_line = function()
   if editor:GetSelText() == '' then Editing.select_line() end
   return editor:GetSelText()
