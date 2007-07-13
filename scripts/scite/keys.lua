@@ -114,7 +114,7 @@ elseif PLATFORM == 'windows' then
     [121] = 'f10',   -- F10
     [122] = 'f11',   -- F11
     [123] = 'f12',   -- F12
-    [186] = ';',     -- seimcolon
+    [186] = ';',     -- semicolon
     [187] = '=',     -- equals
     [188] = ',',     -- comma
     [189] = '-',     -- hypen
@@ -160,8 +160,10 @@ end
 function show_completions()
   if #keychain == 0 then return end
   active_table = _G.keys
+  if keychain.lexer then active_table = active_table[keychain.lexer] end
+  if keychain.scope then active_table = active_table[keychain.scope] end
   for _,key_seq in ipairs(keychain) do active_table = active_table[key_seq] end
-  completion_str = ''
+  local completion_str = ''
   for key_seq in pairs(active_table) do
     completion_str = completion_str..key_seq..'\t'
   end
@@ -217,11 +219,13 @@ function _G.OnKey(code, shift, control, alt)
   keychain[#keychain + 1] = key_seq
   if SCOPES_ENABLED then
     ret, func, arg = pcall(try_get_cmd1, key_seq, lexer, scope)
+    if func == -1 then keychain.lexer, keychain.scope = lexer, scope end
   end
-  if not ret and (func and func:sub(-5) ~= 'chain' or true) then
+  if not ret and func ~= -1 then
     ret, func, arg = pcall(try_get_cmd2, key_seq, lexer)
+    if func == -1 then keychain.lexer = lexer end
   end
-  if not ret and func:sub(-5) ~= 'chain' then
+  if not ret and func ~= -1 then
     ret, func, arg = pcall(try_get_cmd3, key_seq)
   end
 
@@ -238,8 +242,8 @@ function _G.OnKey(code, shift, control, alt)
     return true
   else
     -- Clear key sequence because it's not part of a chain.
-    -- (try_get_cmd throws error string 'Part of chain'.)
-    if func:sub(-5) ~= 'chain' then
+    -- (try_get_cmd throws error number -1.)
+    if func ~= -1 then
       local size = #keychain - 1
       clear_key_sequence()
       if size > 0 then -- previously in a chain
@@ -275,6 +279,9 @@ end
 
 ---
 -- [Local function] Helper function to get commands with the current keychain.
+-- If the current item in the keychain is part of a chain, throw an error value
+-- of -1. This way, pcall will return false and -1, where the -1 can easily and
+-- efficiently be checked rather than using a string error message.
 try_get_cmd = function(active_table)
   local str_seq = ''
   for _, key_seq in ipairs(keychain) do
@@ -284,7 +291,7 @@ try_get_cmd = function(active_table)
   if not active_table[1] then
     props['KeyChain'] = str_seq
     scite.UpdateStatusBar()
-    error('Part of chain')
+    error(-1, 0)
   end
   return active_table[1], active_table[2]
 end
