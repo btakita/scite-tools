@@ -13,9 +13,7 @@
 -- Snippets for the lua module.
 module('modules.lua.snippets', package.seeall)
 
-local snippets = _G.snippets
-
-_G.snippets[SCE_LUA_DEFAULT] = {
+_G.snippets[SCLEX_LUA] = {
   l    = "local ${1:expr}${2: = ${3:value}}",
   p    = "print(${0})",
   f    = "function ${1:name}(${2:args})\n  ${0}\nend",

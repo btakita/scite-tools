@@ -19,7 +19,7 @@ if type(_G.snippets) == 'table' then
   -- Container for Lua-specific snippets.
   -- @class table
   -- @name snippets.lua
-  _G.snippets.lua = {}
+  _G.snippets[SCLEX_LUA] = {}
 end
 
 if type(_G.keys) == 'table' then

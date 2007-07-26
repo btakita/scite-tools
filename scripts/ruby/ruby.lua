@@ -38,7 +38,7 @@ if type(_G.snippets) == 'table' then
   -- Container for Ruby-specific snippets.
   -- @class table
   -- @name snippets.ruby
-  _G.snippets.ruby = {}
+  _G.snippets[SCLEX_RUBY] = {}
 end
 
 if type(_G.keys) == 'table' then

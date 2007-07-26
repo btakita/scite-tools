@@ -19,7 +19,7 @@ if type(_G.snippets) == 'table' then
   -- Container for PHP-specific key commands.
   -- @class table
   -- @name snippets.php
-  _G.snippets.php = {}
+  _G.snippets[SCLEX_HTML] = {}
 end
 
 if type(_G.keys) == 'table' then

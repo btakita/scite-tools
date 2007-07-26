@@ -13,9 +13,7 @@
 -- Snippets for the ruby module.
 module('modules.ruby.snippets', package.seeall)
 
-local snippets = _G.snippets
-
-snippets[SCE_RB_DEFAULT] = {
+_G.snippets[SCLEX_RUBY] = {
   rb   = "#!`which ruby`",
   forin = "for ${1:element} in ${2:collection}\n  ${1}.${0}\nend",
   ife  = "if ${1:condition}\n  ${2:}\nelse\n  ${3:}\nend",

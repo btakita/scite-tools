@@ -19,7 +19,7 @@ if type(_G.snippets) == 'table' then
   -- Container for HTML-specific snippets.
   -- @class table
   -- @name snippets.html
-  _G.snippets.html = {}
+  _G.snippets[SCLEX_HTML] = {}
 end
 
 if type(_G.keys) == 'table' then

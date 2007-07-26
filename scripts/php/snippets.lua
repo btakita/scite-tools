@@ -13,12 +13,12 @@
 -- Snippets for the php module.
 module('modules.php.snippets', package.seeall)
 
--- load HTML snippets and commands too
-dofile( props['SciteDefaultHome']..'/scripts/html/html.lua' )
+-- Load HTML snippets and commands too.
+require 'html/html'
 
-local snippets = _G.snippets
+local snippets = _G.snippets[SCLEX_HTML]
 
-snippets.none.php = "<?php ${0} ?>"
+snippets.php = "<?php ${0} ?>"
 snippets[SCE_HPHP_DEFAULT] = {
   t = "$this->${0}",
   p = "$_POST['${1:item}']${0}",
