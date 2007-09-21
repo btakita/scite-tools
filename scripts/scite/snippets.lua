@@ -142,6 +142,7 @@ function insert(snippet_arg)
     if snippet.index then table.insert(snippet_stack, snippet) end
 
     snippet = {}
+    snippet.snapshots = {}
     snippet.index     = 0
     snippet.start_pos = editor.CurrentPos
     snippet.cursor    = nil
@@ -195,6 +196,7 @@ next_snippet_item = function()
   -- If something went wrong and the snippet has been 'messed' up
   -- (e.g. by undo/redo commands).
   if not s_text then cancel_current() return end
+  snippet.snapshots[snippet.index] = s_text
 
   -- Mirror and transform.
   editor:BeginUndoAction()
@@ -325,6 +327,21 @@ next_snippet_item = function()
     if #snippet_stack > 0 then snippet = table.remove(snippet_stack) end
   end
   editor:EndUndoAction()
+end
+
+---
+-- Goes back to the previous placeholder or tab stop, reverting changes made to
+-- subsequent ones.
+function prev()
+  if not snippet.index then return end
+  local index = snippet.index
+  if index > 1 then
+    local s_start, s_end = snippet_text()
+    local s_text = snippet.snapshots[index - 2]
+    editor:SetSel(s_start, s_end) editor:ReplaceSel(s_text)
+    snippet.index = index - 2
+    next_snippet_item()
+  end
 end
 
 ---

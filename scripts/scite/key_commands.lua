@@ -71,9 +71,9 @@ keys['ca0'] = { 1119 }
 -- snippets
 local m_snippets = modules.scite.snippets
 keys.ci   = { m_snippets.insert           }
-keys.csi  = { m_snippets.cancel_current   }
-keys.cai  = { m_snippets.list             }
-keys.csai = { m_snippets.insert_temporary }
+keys.csi  = { m_snippets.prev             }
+keys.cai  = { m_snippets.cancel_current   }
+keys.csai = { m_snippets.list             }
 keys.ai   = { m_snippets.show_scope       }
 -- keys.? = { 1120 }, -- create snippets
 
