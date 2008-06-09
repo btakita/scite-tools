@@ -1,6 +1,6 @@
 --[[
   Mitchell's php/snippets.lua
-  Copyright (c) 2006-2007 Mitchell Foral. All rights reserved.
+  Copyright (c) 2006-2008 Mitchell Foral. All rights reserved.
 
   SciTE-tools homepage: http://caladbolg.net/scite.php
   Send email to: mitchell<att>caladbolg<dott>net
