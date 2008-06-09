@@ -1,14 +1,12 @@
 --[[
   Mitchell's snippets.lua
-  Copyright (c) 2006-2007 Mitchell Foral. All rights reserved.
+  Copyright (c) 2006-2008 Mitchell Foral. All rights reserved.
 
   SciTE-tools homepage: http://caladbolg.net/scite.php
   Send email to: mitchell<att>caladbolg<dott>net
 
   Permission to use, copy, modify, and distribute this file
   is granted, provided credit is given to Mitchell.
-
-  Documentation can be found in scripts/scite/snippets_doc.txt
 ]]--
 
 ---
@@ -27,6 +25,120 @@
 --   MARK_SNIPPET_COLOR: The Scintilla color used for the line
 --     that marks the end of the snippet.
 module('modules.scite.snippets', package.seeall)
+
+-- Usage:
+-- Basically, snippets are pieces of text inserted into a document, but can
+-- execute shell code at run-time, contain placeholders for additional
+-- information to be added, and make simple transforms on that information.
+-- This is much more powerful than SciTE's abbreviation expansion system.
+--
+-- Syntax:
+--   Snippets are defined in a user-defined table 'snippets'. Scopes (discussed
+--   below) are numeric indices of the snippets table and are tables themselves.
+--   Each string index in each scope table is the snippet trigger text. The
+--   expanded text is equated to this trigger.
+--
+--   For example:
+--   snippets = {
+--     file = "$(FileNameExt)",
+--     [SCLEX_RUBY] = {
+--       ['def'] = "def ${1:initialize}(${2:})\n  ${0}\nend"
+--       [SCE_RB_STRING] = {
+--         ['c'] = "#{${0}}"
+--       }
+--     }
+--   }
+--
+--   The top-level snippets are global, the SCLEX_RUBY snippets are global to a
+--   buffer with Ruby syntax highlighting enabled, and the SCLEX_RUBY
+--   SCE_RB_STRING snippet is expanded in that buffer only when currently in
+--   Ruby's string scope.
+--
+--   Scopes and Lexers:
+--     In the previous example, SCLEX_RUBY is a constant defining the Ruby lexer
+--     and has the value in Scintilla.iface (22). SCE_RB_STRING is the string
+--     scope in SCLEX_RUBY whose definition is also in Scintilla.iface (6).
+--
+--     Scope-insensitive snippets should be placed in the lexer table, and
+--     lexer-insensitive key commands should be placed in the keys table.
+--
+--   By default scopes are enabled. To disable them, set the SCOPES_ENABLED
+--   variable to false.
+--
+--   Order of expansion precidence: Scope, Lexer, Global.
+--     Snippets in the current scope have the first priority, snippets in the
+--     current lexer have the second, and global snippets have the last
+--     priority.
+--
+--   Declaring snippets: ['snippet_trigger'] = "snippet_text"
+--     ( e.g. ['file'] = "$(FileNameExt)" )
+--     snippet_trigger is the text used to trigger snippet expansion and
+--     snippet_text is the body of the snippet shown upon expansion.
+--     snippet_text can contain more than just text:
+--
+--     Placeholders/tab stops: ${num:text} (e.g. ${1:text})
+--       These are visited in numeric order with ${0} being the final cursor
+--       position. If the final cursor position is not specified, the cursor is
+--       placed at the end of the snippet.
+--
+--     Mirrors: ${num} (e.g. ${1})
+--       ${1} would be mirrored by whatever value ${1:text} is in the above
+--       example. Note that mirrors are not updated as text is typed, only after
+--       the next item is moved to.
+--
+--     Transformations: ${num/pattern/replacement/options}
+--       (e.g. ${1/text/other $0/})
+--       Transformations are like mirrors, only they modify the text to mirror.
+--       In this case, 'text' would be replaced with 'other text' if the value
+--       of ${1:text} in the example above matched the pattern. The regular
+--       expressions are Ruby's regexps. Captures groups are referenced with the
+--       prefix '$' and $0 is the entire match. Ruby code can be executed inside
+--       the replacement text using #{}. (e.g. ${1/text/#{$0.capitalize}/})
+--
+--     SciTE variables: $(variable) (e.g. $(FileNameExt))
+--       These are expanded like in .properties files.
+--
+--     Interpolated shell code: `shell_code` (e.g. `date`)
+--
+--     The '$', '/', '}', and '`' characters can be escaped with the '\'
+--     character. Keep in mind that this follows Lua syntax, so in literal
+--     strings (" " or ' '), '\\' is equivalent to one '\' character, but in
+--     strings like [[ ]], a single '\' is used.
+--
+-- To expand a trigger word, call the snippets module's 'insert' function.
+--
+-- Be sure to set the PLATFORM, RUBY_CMD, FILE_IN and FILE_OUT variables as
+-- appropriate. Regexps use Ruby, so Ruby must be installed. That, or you can
+-- modify the code to use another language's regexps.
+-- (Get Ruby at http://ruby-lang.org)
+--
+-- You can declare snippets in separate lua files and use them. For example, I
+-- have a ruby.lua file with snippets specific to Ruby that is loaded whenever I
+-- open or switch to a Ruby file, but are otherwise invisible to non-Ruby files.
+--
+-- Unlike Textmate, you CAN have nested snippets.
+--
+-- Limitations:
+--   Shell code inside regexps is executed the moment a snippet is inserted, not
+--     as placeholders are filled.
+--   Calling undo or performing other text operations outside the snippet WILL
+--     probably cause unexpected behavior.
+--   I don't recommend using the TAB key as the trigger word expander. I've
+--     tried with mixed success to keep the key's original functionality along
+--     with snippet expansion. I happen to use Ctrl+I instead.
+--   Apparently you cannot call module functions from a command defined in a
+--     SciTE properties file without prepending 'dostring ' first. So something
+--     like
+--       command.0.*=dostring modules.scite.snippets.insert()
+--     will function as expected.
+--
+-- Bugs:
+--   If you come across a bug, please turn the DEBUG variable on and send me
+--   both the snippet text and output text.
+--
+-- Testing:
+--   To run the test suite, change the RUN_TESTS flag and reload snippets.lua.
+--   Remember to reset the flag when you are finished!
 
 -- options
 local PLATFORM = _G.PLATFORM or 'linux'

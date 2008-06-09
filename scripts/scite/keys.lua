@@ -1,6 +1,6 @@
 --[[
   Mitchell's keys.lua
-  Copyright (c) 2006-2007 Mitchell Foral. All rights reserved.
+  Copyright (c) 2006-2008 Mitchell Foral. All rights reserved.
 
   SciTE-tools homepage: http://caladbolg.net/scite.php
   Send email to: mitchell<att>caladbolg<dott>net
@@ -27,6 +27,112 @@
 --   KEYCHAIN_PROP: The SciTE property that will be updated each time the
 --     keychain is modified.
 module('modules.scite.keys', package.seeall)
+
+-- Usage:
+-- Syntax:
+--   Key commands are defined in a user-defined table 'keys'. Scopes and Lexers
+--   (discussed below) are numeric indices of the keys table and are tables
+--   themselves. Each string index in each of these tables is the key command.
+--   The table containing the command to execute and an optional parameter is
+--   equated to this key command. You can have global key commands of course.
+--
+--   For example:
+--   local m_editing = modules.scite.editing
+--   local m_snippets = modules.scite.snippets
+--   keys = {
+--     ['ctrl+f']   = { editor.CharRight, editor },
+--     ['ctrl+b']   = { editor.CharLeft,  editor },
+--     [SCLEX_RUBY] = {
+--       ['ctrl+e']   = { m_editing.ruby_exec },
+--       [SCE_RB_DEFAULT] = {
+--         ['ctrl+f'] = { m_snippets.insert, 'function ${1:name}' }
+--       }
+--     }
+--   }
+--
+--   The top-level key commands are global, the SCLEX_RUBY command is global to
+--   a buffer with Ruby syntax highlighting enabled, and the SCE_RB_DEFAULT
+--   command is executed in that buffer only when currently in the default
+--   scope.
+--
+--   Scopes and Lexers:
+--     SCLEX_RUBY and SCE_RB_DEFAULT are both constants having values defined in
+--     Scintilla.iface (22 and 0 respectively).
+--
+--     Scope-insensitive key commands should be placed in the lexer table, and
+--     lexer-insensitive key commands should be placed in the keys table.
+--
+--   By default scopes are enabled. To disable them, set the SCOPES_ENABLED
+--   variable to false.
+--
+--   Order of execution precedence: Scope, Lexer, Global.
+--     Key commands in the current scope have the first priority, commands in
+--     the current lexer have the second, and global commands have the least
+--     priority.
+--
+--   Declaring key commands: ['key_seq'] = { command [, arg] }
+--     ( e.g. ['ctrl+i'] = { modules.scite.snippets.insert } )
+--     key_seq is the key sequence string compiled from the CTRL, SHIFT, ALT,
+--     and ADD options (discussed below), command is the Lua function or SciTE
+--     menu command number (defined in SciTE.h), and arg is an optional
+--     argument. If I wanted to redefine the 'Open' menu command to be 'ctrl+r',
+--     then I would do something like ['ctrl+r'] = { 102 } -- open.
+--     Editor pane commands are kind of tricky at first. Their argument is the
+--     editor pane itself. You can see this in the original example above.
+--     The key character is ALWAYS lower case. There will be no such command as
+--     ['ctrl+I'].
+--     The string representation of characters is used, so ['ctrl+/'] is a valid
+--     key sequence. (See limitations of this below.)
+--     The order of CTRL, SHIFT, and ALT is important. (C, CS, CA, CSA, etc.)
+--
+--   Chaining key commands:
+--     Key commands can be chained like in Emacs. All you have to do create
+--     nested tables as values of key commands.
+--
+--     For Example:
+--     keys = {
+--       ['ctrl+x'] = {
+--         ['ctrl+s'] = { 106 } -- save
+--         ['ctrl+c'] = { 140 } -- quit
+--       }
+--     }
+--
+--     Remember to define a clear_sequence key sequence in the keys table
+--     (Escape by default) in order to stop the current chain.
+--     If a show_completions key sequence is defined, a list of completions for
+--     the current chain will be displayed in the output pane.
+--     The current key sequence is contained in the SciTE variable KeyChain.
+--     (Appropriate for statusbar display)
+--
+--   Additional syntax options:
+--     The text for CTRL, SHIFT, ALT, and ADD can be changed. ADD is the text
+--     inserted between modifiers ('+' in the example above). They can be as
+--     simple as c, s, a, [nothing] respectively. ( ['csao'] would be
+--     ctrl+shift+alt+o )
+--
+-- Extensibility:
+--   You don't have to define all of your key commands in one place. I have
+--   Ruby-specific key commands in my ruby.lua file for example. All you need to
+--   do is add to the keys table. ( e.g. keys[SCLEX_RUBY] = { ... } )
+--   Note: additions to the keys table should be at the end of your *.lua file.
+--   (See the reason behind this below.)
+--
+-- Limitations:
+--   Certain keys that have values higher than 255 can not be used, except for
+--     the keys that are located in the KEYSYMS table. When a key value higher
+--     than 255 is encountered, its string value is looked up in KEYSYMS and
+--     used in the sequence string.
+--   In order for key commands to execute Lua functions properly, the Lua
+--     functions must be defined BEFORE the key command references to it. This
+--     is why the keys.lua module should be loaded LAST, and key commands added
+--     at the bottom of *.lua scripts, after all global functions are defined.
+--   The clear_sequence and show_completions key sequences cannot be chained.
+--
+-- Notes:
+--   Redefining any menu Alt+key sequences will override them. So for example if
+--     'alt+f' is defined, using Alt+F to access SciTE's File menu will no
+--     longer work.
+--   Setting ALTERNATIVE_KEYS to true enables my nano-emacs hybrid key layout.
 
 -- options
 local PLATFORM = _G.PLATFORM or 'linux'
